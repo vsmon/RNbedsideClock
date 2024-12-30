@@ -34,3 +34,8 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+/src/api/tokens.ts
+/src/api/tokens.js
+/src/api/tokens.tsx
+.env
