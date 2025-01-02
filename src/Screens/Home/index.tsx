@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Button,
+  Modal,
   PermissionsAndroid,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -14,21 +16,20 @@ import {
   FontAwesome,
 } from "@expo/vector-icons";
 
-import { Image } from "expo-image";
-
-import { mainColor, secondColor } from "../../constants/colors";
 import * as Brightness from "expo-brightness";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import { useNetInfo } from "@react-native-community/netinfo";
 
-import DisplayOff from "../../components/DisplayOff";
 import Humidity from "../../components/Humidity";
 import HumidityInside from "../../components/HumidityInside";
 import openweathermap from "../../api/openweathermap";
 import ExternalTempIcon from "../../components/ExternalTempIcon";
 import getBitcoinPrice from "../../api/bitcoinPrice";
 import getDollarPrice from "../../api/dollarPrice";
+import SettingsModal from "../../components/SettingsModal";
+import { getStoredData } from "../../database";
+import { StoredData, storedData } from "../../Types";
 
 const TOKEN_RASPBERRY = process.env.TOKEN_RASPBERRY;
 
@@ -52,6 +53,18 @@ export default function Home() {
   const [externalDescription, setExternalDescription] = useState<string>("");
   const [btcPrice, setBtcPrice] = useState<string>("0");
   const [dollarPrice, setDollarPrice] = useState<string>("0");
+  const [textColor, setTextColor] = useState<string>("#08fdf1");
+  const [isVisibleSettings, setIsVisibleSettings] = useState<boolean>(false);
+  const [settings, setSettings] = useState<StoredData>({
+    settings: {
+      iniTime: "10:00:00",
+      endTime: "10:00:00",
+      color: { dayColor: "", nightColor: "" },
+    },
+  });
+
+  const [idIntervalOne, setIdIntervalOne] = useState<NodeJS.Timeout>();
+  const [idIntervalFive, setIdIntervalFive] = useState<NodeJS.Timeout>();
 
   const [loaded, error] = useFonts({
     "Digital-7": require("../../../assets/fonts/digital-7.ttf"),
@@ -72,22 +85,26 @@ export default function Home() {
       Brightness.BrightnessMode.AUTOMATIC
     );
   }
-
-  function Time() {
-    setInterval(() => {
+  async function Time() {
+    const oneSecInvervalID = setInterval(function () {
       setTime(new Date().toLocaleTimeString());
 
-      if (new Date().toLocaleTimeString() === "01:00:00") {
+      //console.log(settings.settings?.endTime);
+
+      if (new Date().toLocaleTimeString() === settings.settings?.iniTime) {
         //setTurnoffDisplay(true);
         setBrightness(0);
+        setTextColor("#FF0000");
       }
-      if (new Date().toLocaleTimeString() === "07:00:00") {
+      if (new Date().toLocaleTimeString() === settings.settings?.endTime) {
         //setTurnoffDisplay(false);
         setBrightnessAutomatic();
+        setTextColor("#08fdf1");
       }
     }, 1000);
+    setIdIntervalOne(oneSecInvervalID);
 
-    setInterval(() => {
+    const fiveSecInvervalID = setInterval(function () {
       geTemperature();
       getRaspberryTemperature();
       handleBitcoinPrice();
@@ -96,7 +113,9 @@ export default function Home() {
         `${new Date().toLocaleString()} - Loop executed.............`
       );
     }, 300000);
+    setIdIntervalFive(fiveSecInvervalID);
   }
+
   async function getRaspberryTemperature() {
     const URL: string = `https://rodrigofm.com.br/temperature?token=${TOKEN_RASPBERRY}`;
     try {
@@ -204,15 +223,38 @@ export default function Home() {
     }
   }
 
+  function onCloseSettingsModal() {
+    setIsVisibleSettings(!isVisibleSettings);
+    Time();
+  }
+
+  async function handleSettings() {
+    const settings = await getStoredData("settings");
+    if (settings.settings) {
+      const { iniTime, endTime, color } = settings.settings;
+      setSettings(settings.settings);
+      console.log("handleSettings", settings.settings);
+    }
+  }
+
   useEffect(() => {
+    console.log("handleSettings", settings);
+    handleSettings();
     setBrightnessAutomatic();
     Time();
     geTemperature();
     getRaspberryTemperature();
-    handleBitcoinPrice();
-    handleDollarPrice();
-    //requestWriteSettingsPermissoin();
+    /*     handleBitcoinPrice();
+    handleDollarPrice(); */
   }, []);
+
+  useEffect(() => {
+    if (isVisibleSettings) {
+      clearInterval(idIntervalOne);
+      clearInterval(idIntervalFive);
+    }
+    handleSettings();
+  }, [isVisibleSettings]);
 
   useEffect(() => {
     if (loaded || error) {
@@ -224,56 +266,72 @@ export default function Home() {
     return null;
   }
 
-  return tunoffDisplay ? (
-    <DisplayOff />
-  ) : (
+  return (
     <View style={styles.container}>
+      <SettingsModal
+        visible={isVisibleSettings}
+        onClose={onCloseSettingsModal}
+      />
+
       <View style={styles.temperaturesContainer}>
         <View style={styles.internalDataContainer}>
           <View style={styles.temperatureContainer}>
             <MaterialCommunityIcons
               name="home-thermometer-outline"
               size={45}
-              color="#08fdf1"
+              color={textColor}
             />
-            <Text style={styles.temperatureText}>{internalTemperature}°</Text>
+            <Text style={[styles.temperatureText, { color: textColor }]}>
+              {internalTemperature}°
+            </Text>
           </View>
-
           <View style={styles.humidityContainer}>
-            <HumidityInside size={45} />
-            <Text style={styles.temperatureText}>{internalHumidity}%</Text>
+            <HumidityInside size={45} color={textColor} />
+            <Text style={[styles.temperatureText, { color: textColor }]}>
+              {internalHumidity}%
+            </Text>
           </View>
         </View>
 
         <View style={styles.rainyProbContainer}>
-          <Ionicons name="umbrella-outline" size={45} color="#08fdf1" />
-          <Text style={styles.rainyProbText}>{rainyProb}%</Text>
+          <Ionicons name="umbrella-outline" size={45} color={textColor} />
+          <Text style={[styles.rainyProbText, { color: textColor }]}>
+            {rainyProb}%
+          </Text>
         </View>
 
         <View style={styles.rainyProbContainer}>
-          <Text style={[styles.rainyProbText, { fontSize: 35 }]}>
+          <Text
+            style={[styles.rainyProbText, { fontSize: 35, color: textColor }]}
+          >
             {nextHour}h
           </Text>
-          <Text style={styles.rainyProbText}>{rainyProbNextHour}%</Text>
+          <Text style={[styles.rainyProbText, { color: textColor }]}>
+            {rainyProbNextHour}%
+          </Text>
         </View>
 
         <View style={styles.externalDataContainer}>
           <View style={styles.humidityContainer}>
-            <Humidity size={45} />
-            <Text style={styles.temperatureText}>{externalHumidity}%</Text>
+            <Humidity size={45} color={textColor} />
+            <Text style={[styles.temperatureText, { color: textColor }]}>
+              {externalHumidity}%
+            </Text>
           </View>
 
           <View style={styles.temperatureContainer}>
-            <ExternalTempIcon idIcon={idIcon} size={45} />
+            <ExternalTempIcon idIcon={idIcon} size={45} color={textColor} />
 
-            <Text style={styles.temperatureText}>{externalTemperature}°</Text>
+            <Text style={[styles.temperatureText, { color: textColor }]}>
+              {externalTemperature}°
+            </Text>
           </View>
         </View>
       </View>
 
       <View style={styles.timeContainer}>
         <View style={styles.dateContainer}>
-          <Text style={styles.dateText}>
+          <Text style={[styles.dateText, { color: textColor }]}>
             {new Intl.DateTimeFormat(undefined, {
               //dateStyle: "full",
               day: "2-digit",
@@ -284,24 +342,30 @@ export default function Home() {
               //timeZone: "America/Sao_Paulo",
             }).format(new Date())}
           </Text>
-          <Text style={{ color: "#08fdf1", fontSize: 25 }}>{" - "}</Text>
-          <Text style={styles.dateText}>{externalDescription}</Text>
+          <Text style={{ color: textColor, fontSize: 25 }}>{" - "}</Text>
+          <Text style={[styles.dateText, { color: textColor }]}>
+            {externalDescription}
+          </Text>
         </View>
-        <Text style={styles.timeText}>{time}</Text>
+        <Pressable onPress={() => setIsVisibleSettings(!isVisibleSettings)}>
+          <Text style={[styles.timeText, { color: textColor }]}>{time}</Text>
+        </Pressable>
       </View>
 
       <View style={styles.footerContainer}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Fontisto name="raspberry-pi" size={40} color="#E30B5C" />
-          <FontAwesome6 name="temperature-half" size={40} color="#08fdf1" />
-          <Text style={styles.raspberryTempText}>{raspberryTemperature}°</Text>
+          <FontAwesome6 name="temperature-half" size={40} color={textColor} />
+          <Text style={[styles.raspberryTempText, { color: textColor }]}>
+            {raspberryTemperature}°
+          </Text>
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <FontAwesome name="bitcoin" size={40} color={"#F7931A"} />
           <Text
             style={{
-              color: "#08fdf1",
+              color: textColor,
               fontSize: 40,
               marginLeft: 5,
               fontFamily: "Roboto",
@@ -315,7 +379,7 @@ export default function Home() {
           <FontAwesome name="dollar" size={40} color={"#00be19"} />
           <Text
             style={{
-              color: "#08fdf1",
+              color: textColor,
               fontSize: 40,
               marginLeft: 5,
               fontFamily: "Roboto",
@@ -333,6 +397,13 @@ export default function Home() {
             color={netInfo.isConnected ? "#00ac17" : "red"}
           />
         </View>
+        <Button
+          title="Test"
+          onPress={async () => {
+            const dataStored = await getStoredData("settings");
+            console.log("BUTTON============", dataStored);
+          }}
+        />
       </View>
     </View>
   );

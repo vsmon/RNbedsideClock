@@ -4,9 +4,10 @@ import { Ionicons, MaterialCommunityIcons, Fontisto } from "@expo/vector-icons";
 
 type humidityIcon = {
   size: number;
+  color: string;
 };
 
-export default function Humidity({ size }: humidityIcon) {
+export default function Humidity({ size, color }: humidityIcon) {
   return (
     <View
       style={{
@@ -26,7 +27,7 @@ export default function Humidity({ size }: humidityIcon) {
         style={{ marginLeft: (-90 * size) / 80 }}
         name="water"
         size={size}
-        color="#08fdf1"
+        color={color}
       />
     </View>
   );

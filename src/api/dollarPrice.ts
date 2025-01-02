@@ -8,7 +8,6 @@ export default async function getDollarPrice(): Promise<number> {
     } = json;
 
     if (amount) {
-      console.log("DATA DOLLAR=================", amount);
       return Promise.resolve(amount);
     } else {
       throw new Error("Data not found");

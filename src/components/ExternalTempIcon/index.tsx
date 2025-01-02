@@ -4,9 +4,14 @@ import { Ionicons, MaterialCommunityIcons, Fontisto } from "@expo/vector-icons";
 type ExternalTempIcon = {
   idIcon: { id: number; icon: string };
   size: number;
+  color: string;
 };
 
-export default function ExternalTempIcon({ idIcon, size }: ExternalTempIcon) {
+export default function ExternalTempIcon({
+  idIcon,
+  size,
+  color,
+}: ExternalTempIcon) {
   const [iconName, setIconName] =
     useState<React.ComponentProps<typeof MaterialCommunityIcons>["name"]>(
       "weather-cloudy"
@@ -78,8 +83,6 @@ export default function ExternalTempIcon({ idIcon, size }: ExternalTempIcon) {
         { id: 804, icon: "04d", name: "weather-cloudy" },
       ];
 
-      console.log("FILTER===========", idIcon.id, idIcon.icon);
-
       const indexNameByIcon = weatherConditions.findIndex(
         (item) => item.id === idIcon.id && item.icon === idIcon.icon
       );
@@ -88,9 +91,6 @@ export default function ExternalTempIcon({ idIcon, size }: ExternalTempIcon) {
         (item) => item.id === idIcon.id
       );
 
-      console.log("INDEX indexNameByIcon========", indexNameByIcon);
-      console.log("INDEX indexNameById========", indexNameById);
-
       const name:
         | React.ComponentProps<typeof MaterialCommunityIcons>["name"]
         | any =
@@ -98,12 +98,11 @@ export default function ExternalTempIcon({ idIcon, size }: ExternalTempIcon) {
           ? weatherConditions[indexNameByIcon].name
           : weatherConditions[indexNameById].name;
 
-      console.log("ICON NAME===============", name);
       setIconName(name);
     } catch (error) {
       console.log("Error get icon name", error);
     }
   }
 
-  return <MaterialCommunityIcons name={iconName} size={size} color="#08fdf1" />;
+  return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
 }

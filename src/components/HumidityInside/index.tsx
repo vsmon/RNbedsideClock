@@ -4,9 +4,10 @@ import Humidity from "../Humidity";
 
 type HumidityInside = {
   size: number;
+  color: string;
 };
 
-export default function HumidityInside({ size }: HumidityInside) {
+export default function HumidityInside({ size, color }: HumidityInside) {
   return (
     <View
       style={{
@@ -20,7 +21,7 @@ export default function HumidityInside({ size }: HumidityInside) {
         style={{ marginRight: (-110 * size) / 150 }}
         name="home-thermometer-outline"
         size={size}
-        color="#08fdf1"
+        color={color}
       />
       <View
         style={{
@@ -29,7 +30,7 @@ export default function HumidityInside({ size }: HumidityInside) {
           zIndex: 5,
         }}
       >
-        <Humidity size={size / 2} />
+        <Humidity size={size / 2} color={color} />
       </View>
     </View>
   );
