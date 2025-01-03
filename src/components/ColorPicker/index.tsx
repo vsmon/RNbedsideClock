@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -38,6 +38,7 @@ interface ChildComponentProps {
   onColorChange: (color: Color) => void;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export default function ColorPickerModal({
   onColorChange,
 }: ChildComponentProps) {
@@ -49,6 +50,10 @@ export default function ColorPickerModal({
   const initialColor = colorKit.randomRgbColor().hex();
 
   const selectedColor = useSharedValue(initialColor);
+
+  const selectedDayColor = useSharedValue(initialColor);
+  const selectedNightColor = useSharedValue(initialColor);
+
   const backgroundColorStyle = useAnimatedStyle(() => ({
     backgroundColor: selectedColor.value,
   }));
@@ -56,40 +61,38 @@ export default function ColorPickerModal({
   const onColorSelect = (color: returnedResults) => {
     "worklet";
     selectedColor.value = color.hex;
-    //console.log(selectedColor.value);
+    if (buttonID === "day") {
+      selectedDayColor.value = color.hex;
+    } else if (buttonID === "night") {
+      selectedNightColor.value = color.hex;
+    }
   };
 
-  async function handleChangeColor(selectedColor: string) {
-    /*const settings = await getStoredData("settings");
-     let dayColor: string = settings.settings?.color?.dayColor || "", //"#08fdf1",
-      nightColor: string = settings.settings?.color?.nightColor || ""; //"#FF0000"; */
-
-    if (buttonID === "day") {
-      console.log("passei day", selectedColor);
-      setDayColor(selectedColor);
-    } else if (buttonID === "night") {
-      console.log("passei night", selectedColor);
-      setNightColor(selectedColor);
-    }
-
-    /* const newSettings: StoredData = {
-      settings: {
-        ...settings.settings!,
-        color: { dayColor: dayColor, nightColor: nightColor },
-      },
-    };
- */
-    /* await mergeData("settings", newSettings.settings); */
-    console.log("COLOR PICKER======", dayColor, nightColor);
-    onColorChange({ dayColor, nightColor });
+  function handleChangeColor() {
+    setDayColor(selectedDayColor.value);
+    setNightColor(selectedNightColor.value);
+    onColorChange({
+      dayColor: selectedDayColor.value,
+      nightColor: selectedNightColor.value,
+    });
   }
 
-  const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+  async function handleSettings() {
+    const settings = await getStoredData("settings");
+    if (settings.settings) {
+      setDayColor(settings.settings.color?.dayColor!);
+      setNightColor(settings.settings.color?.nightColor!);
+    }
+  }
+
+  useEffect(() => {
+    handleSettings();
+  }, []);
 
   return (
     <>
       <AnimatedPressable
-        style={[styles.openButton, backgroundColorStyle]}
+        style={[styles.openButton, { backgroundColor: dayColor }]}
         onPress={() => {
           setButtonID("day");
           setShowModal(true);
@@ -102,7 +105,7 @@ export default function ColorPickerModal({
         </Text>
       </AnimatedPressable>
       <AnimatedPressable
-        style={[styles.openButton, backgroundColorStyle]}
+        style={[styles.openButton, { backgroundColor: nightColor }]}
         onPress={() => {
           setButtonID("night");
           setShowModal(true);
@@ -134,7 +137,6 @@ export default function ColorPickerModal({
                 thumbShape="doubleTriangle"
                 onChange={onColorSelect}
                 adaptSpectrum
-                onComplete={() => {}}
               >
                 <Panel2
                   style={styles.panelStyle}
@@ -169,7 +171,7 @@ export default function ColorPickerModal({
           <Pressable
             style={styles.closeButton}
             onPress={() => {
-              handleChangeColor(selectedColor.value);
+              handleChangeColor();
               setShowModal(false);
             }}
           >
@@ -242,7 +244,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     paddingVertical: 10,
     backgroundColor: "#fff",
-
+    marginBottom: 5,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,

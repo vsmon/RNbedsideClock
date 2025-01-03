@@ -16,7 +16,6 @@ import {
   FontAwesome,
 } from "@expo/vector-icons";
 
-import * as Brightness from "expo-brightness";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import { useNetInfo } from "@react-native-community/netinfo";
@@ -28,8 +27,9 @@ import ExternalTempIcon from "../../components/ExternalTempIcon";
 import getBitcoinPrice from "../../api/bitcoinPrice";
 import getDollarPrice from "../../api/dollarPrice";
 import SettingsModal from "../../components/SettingsModal";
-import { getStoredData } from "../../database";
-import { StoredData, storedData } from "../../Types";
+import { getStoredData, storeData } from "../../database";
+import { StoredData } from "../../Types";
+import Time from "../../components/Time";
 
 const TOKEN_RASPBERRY = process.env.TOKEN_RASPBERRY;
 
@@ -62,6 +62,8 @@ export default function Home() {
       color: { dayColor: "", nightColor: "" },
     },
   });
+  const [updateData, setUpdateData] = useState<number>(0);
+  const [updateSettings, setUpdateSettings] = useState<boolean>(false);
 
   const [idIntervalOne, setIdIntervalOne] = useState<NodeJS.Timeout>();
   const [idIntervalFive, setIdIntervalFive] = useState<NodeJS.Timeout>();
@@ -72,49 +74,6 @@ export default function Home() {
   });
 
   const netInfo = useNetInfo();
-
-  async function setBrightness(value: number) {
-    const { status } = await Brightness.requestPermissionsAsync();
-    if (status === "granted") {
-      Brightness.setSystemBrightnessAsync(value);
-    }
-  }
-
-  async function setBrightnessAutomatic() {
-    Brightness.setSystemBrightnessModeAsync(
-      Brightness.BrightnessMode.AUTOMATIC
-    );
-  }
-  async function Time() {
-    const oneSecInvervalID = setInterval(function () {
-      setTime(new Date().toLocaleTimeString());
-
-      //console.log(settings.settings?.endTime);
-
-      if (new Date().toLocaleTimeString() === settings.settings?.iniTime) {
-        //setTurnoffDisplay(true);
-        setBrightness(0);
-        setTextColor("#FF0000");
-      }
-      if (new Date().toLocaleTimeString() === settings.settings?.endTime) {
-        //setTurnoffDisplay(false);
-        setBrightnessAutomatic();
-        setTextColor("#08fdf1");
-      }
-    }, 1000);
-    setIdIntervalOne(oneSecInvervalID);
-
-    const fiveSecInvervalID = setInterval(function () {
-      geTemperature();
-      getRaspberryTemperature();
-      handleBitcoinPrice();
-      handleDollarPrice();
-      console.log(
-        `${new Date().toLocaleString()} - Loop executed.............`
-      );
-    }, 300000);
-    setIdIntervalFive(fiveSecInvervalID);
-  }
 
   async function getRaspberryTemperature() {
     const URL: string = `https://rodrigofm.com.br/temperature?token=${TOKEN_RASPBERRY}`;
@@ -223,37 +182,50 @@ export default function Home() {
     }
   }
 
-  function onCloseSettingsModal() {
+  async function handleSave(values) {
+    await storeData("settings", values);
+  }
+
+  function onCloseSettingsModal({
+    iniTime,
+    endTime,
+    color,
+  }: {
+    iniTime: string;
+    endTime: string;
+    color: { dayColor: string; nightColor: string };
+  }) {
+    const values = {
+      settings: {
+        iniTime,
+        endTime,
+        color,
+      },
+    };
+    handleSave(values);
+    setSettings(values);
+
     setIsVisibleSettings(!isVisibleSettings);
-    Time();
   }
 
   async function handleSettings() {
     const settings = await getStoredData("settings");
     if (settings.settings) {
-      const { iniTime, endTime, color } = settings.settings;
-      setSettings(settings.settings);
-      console.log("handleSettings", settings.settings);
+      setSettings(settings);
     }
   }
 
   useEffect(() => {
-    console.log("handleSettings", settings);
     handleSettings();
-    setBrightnessAutomatic();
-    Time();
     geTemperature();
     getRaspberryTemperature();
-    /*     handleBitcoinPrice();
-    handleDollarPrice(); */
-  }, []);
+    handleBitcoinPrice();
+    handleDollarPrice();
+  }, [updateData]);
 
   useEffect(() => {
-    if (isVisibleSettings) {
-      clearInterval(idIntervalOne);
-      clearInterval(idIntervalFive);
-    }
     handleSettings();
+    setUpdateSettings(true);
   }, [isVisibleSettings]);
 
   useEffect(() => {
@@ -347,8 +319,13 @@ export default function Home() {
             {externalDescription}
           </Text>
         </View>
-        <Pressable onPress={() => setIsVisibleSettings(!isVisibleSettings)}>
-          <Text style={[styles.timeText, { color: textColor }]}>{time}</Text>
+        <Pressable onPress={() => setIsVisibleSettings(true)}>
+          {/* <Text style={[styles.timeText, { color: textColor }]}>{time}</Text> */}
+          <Time
+            onChangeTextColor={(textColor) => setTextColor(textColor)}
+            onUpdateData={(updateData) => setUpdateData(updateData)}
+            updateSettings={() => updateSettings}
+          />
         </Pressable>
       </View>
 

@@ -5,8 +5,8 @@ import Home from "./src/Screens/Home";
 export default function App() {
   return (
     <View style={styles.container}>
-      <Home />
       <StatusBar style="auto" hidden={true} />
+      <Home />
     </View>
   );
 }
