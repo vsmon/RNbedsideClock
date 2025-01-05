@@ -29,20 +29,23 @@ import ColorPicker from "../../components/ColorPicker";
 
 import { getStoredData, storeData } from "../../database";
 import { Color, StoredData } from "../../Types";
+import convertStringToTime from "../../Utils/convertStringToTime";
 
 interface SettingsModalProps {
   visible: boolean;
   onClose: any;
 }
 export default function SettingsModal({
-  visible: visibleSettingsModal,
+  visible,
   onClose,
 }: SettingsModalProps) {
   const [date, setDate] = useState<Date>(new Date());
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
+  const [visibleSettingsModal, setVisibleSettingsModal] =
+    useState<boolean>(false);
   const [iniTime, setIniTime] = useState<string>("00:00:00");
   const [endTime, setEndTime] = useState<string>("10:00:00");
-  const [teste, setTeste] = useState<string>("0");
+  const [shouldSave, setShouldSave] = useState<boolean>(false);
   const [color, setColor] = useState<Color>({
     dayColor: "#08fdf1",
     nightColor: "#FF0000",
@@ -54,6 +57,7 @@ export default function SettingsModal({
     selectedDate: Date | undefined
   ) {
     const currentDate = selectedDate;
+
     if (event.type === "dismissed") {
       setShowTimePicker(false);
     }
@@ -61,23 +65,34 @@ export default function SettingsModal({
       if (currentDate) {
         if (textInputID === "iniTime") {
           setIniTime(currentDate.toLocaleTimeString());
-          setTeste(currentDate.toLocaleTimeString());
         } else if (textInputID === "endTime") {
           setEndTime(currentDate.toLocaleTimeString());
         }
         setShowTimePicker(false);
+        setShouldSave(true);
       }
     }
   }
 
-  function convertStringToTime(time: string) {
-    const [hours, minutes, seconds] = time.split(":").map(Number);
-    const date = new Date();
-    date.setHours(hours);
-    date.setMinutes(minutes);
-    date.setSeconds(seconds);
+  useEffect(() => {
+    if (shouldSave) {
+      saveTime();
+    }
+  }, [iniTime, endTime]);
 
-    return date;
+  async function saveTime() {
+    const settings = await getStoredData("settings");
+    if (settings.settings) {
+      const updatedSettings: StoredData = {
+        settings: {
+          ...settings.settings,
+          iniTime: iniTime,
+          endTime: endTime,
+        },
+      };
+      await storeData("settings", updatedSettings);
+      setShouldSave(false);
+    }
   }
 
   async function handleGetSettings() {
@@ -91,39 +106,30 @@ export default function SettingsModal({
       setIniTime(iniTime);
       setEndTime(endTime);
       setColor(color);
-
-      if (textInputID === "iniTime") {
-        setDate(convertStringToTime(iniTime));
-      } else if (textInputID === "endTime") {
-        setDate(convertStringToTime(endTime));
-      }
     }
   }
-  const handleColorChange = (newColor: Color) => {
-    setColor(newColor);
-  };
 
   function handleIniTime() {
     setTextInputID("iniTime");
-    setDate(new Date(iniTime));
+    setDate(convertStringToTime(iniTime));
     setShowTimePicker(true);
   }
   function handleEndTime() {
     setTextInputID("endTime");
-    setDate(new Date(endTime));
+    setDate(convertStringToTime(endTime));
     setShowTimePicker(true);
   }
 
+  function onCloseSettingsModal() {
+    onClose(visible);
+  }
+
   useEffect(() => {
-    //handleGetSettings();
+    handleGetSettings();
   }, []);
 
   return (
-    <Modal
-      visible={visibleSettingsModal}
-      //onRequestClose={onClose}
-      transparent={true}
-    >
+    <Modal visible={visible} onRequestClose={onClose} transparent={true}>
       {showTimePicker && (
         <DateTimePicker
           display="clock"
@@ -139,12 +145,12 @@ export default function SettingsModal({
           name="close"
           size={30}
           color={"white"}
-          onPress={() => onClose({ iniTime, endTime, color })}
+          onPress={onCloseSettingsModal}
         />
         <Text style={{ color: "#FFF", fontSize: 30, marginBottom: 5 }}>
           Settings
         </Text>
-        <Text style={{ color: "white" }}>{teste}</Text>
+        {/* <Text style={{ color: "white" }}>{teste}</Text> */}
         <Pressable onPress={handleIniTime}>
           <TextInput
             style={styles.textInput}
@@ -153,7 +159,7 @@ export default function SettingsModal({
           />
         </Pressable>
 
-        <Text style={{ color: "white" }}>{endTime}</Text>
+        {/* <Text style={{ color: "white" }}>{endTime}</Text> */}
         <Pressable onPress={handleEndTime}>
           <TextInput
             style={styles.textInput}
@@ -161,11 +167,7 @@ export default function SettingsModal({
             editable={false}
           />
         </Pressable>
-        <ColorPicker onColorChange={handleColorChange} />
-        <Button
-          title="Test"
-          onPress={() => console.log(iniTime, endTime, color)}
-        />
+        <ColorPicker />
       </View>
     </Modal>
   );

@@ -6,19 +6,19 @@ import { StoredData } from "../../Types";
 import { getStoredData } from "../../database";
 
 interface ChildComponentProps {
-  onChangeTextColor: (textColor: string) => void;
-  onUpdateData: (updateData: number) => void;
-  updateSettings: (updateSettings: boolean) => void;
+  textColor: string;
+  updateSettings: boolean;
+  changeColor: (color: string) => void;
 }
 
 export default function Time({
-  onChangeTextColor,
-  onUpdateData,
+  textColor = "#08fdf1",
   updateSettings,
+  changeColor,
 }: ChildComponentProps) {
   const [time, setTime] = useState<string>("");
-  const [textColor, setTextColor] = useState<string>("#08fdf1");
-  const [updateData, setUpdateData] = useState<boolean>(false);
+  const [timeTextColor, setTimeTextColor] = useState<string>(textColor);
+
   const [settings, setSettings] = useState<StoredData>({
     settings: {
       iniTime: "10:00:00",
@@ -40,51 +40,72 @@ export default function Time({
     );
   }
 
-  async function Time() {
+  async function Time(
+    iniTime: string,
+    endTime: string,
+    dayColor: string,
+    nightColor: string
+  ) {
     setTime(new Date().toLocaleTimeString());
-    if (new Date().toLocaleTimeString() === settings.settings?.iniTime) {
+
+    if (new Date().toLocaleTimeString() === iniTime) {
       setBrightness(0);
-      setTextColor(settings.settings?.color?.nightColor!);
-      onChangeTextColor(settings.settings?.color?.nightColor!);
+      setTimeTextColor(nightColor);
+      changeColor(nightColor);
     }
-    if (new Date().toLocaleTimeString() === settings.settings?.endTime) {
+    if (new Date().toLocaleTimeString() === endTime) {
       setBrightnessAutomatic();
-      setTextColor(settings.settings?.color?.dayColor!);
-      onChangeTextColor(settings.settings?.color?.dayColor!);
+      setTimeTextColor(dayColor);
+      changeColor(dayColor);
     }
   }
 
-  async function handleSettings() {
+  async function loadSettings() {
     const settings = await getStoredData("settings");
     if (settings.settings) {
       setSettings(settings);
-      onChangeTextColor(settings.settings?.color?.dayColor!);
-      setTextColor(settings.settings?.color?.dayColor!);
+
+      return settings;
     }
   }
 
   useEffect(() => {
-    handleSettings();
-  }, [updateSettings]);
+    setTimeTextColor(textColor);
+  }, [textColor]);
 
   useEffect(() => {
-    const oneSecInterval = setInterval(() => {
-      Time();
-    }, 1000);
+    loadSettings()
+      .then((settings) => {
+        const oneSecInterval = setInterval(() => {
+          Time(
+            settings?.settings.iniTime!,
+            settings?.settings.endTime!,
+            settings?.settings.color?.dayColor!,
+            settings?.settings.color?.nightColor!
+          );
+        }, 1000);
 
-    const fiveSecInvervalID = setInterval(() => {
-      onUpdateData(Math.random());
-      console.log(
-        `${new Date().toLocaleString()} - Loop executed.............`
-      );
-    }, 300000);
-
-    return () => {
-      clearInterval(oneSecInterval);
-      clearInterval(fiveSecInvervalID);
-    };
+        return () => {
+          clearInterval(oneSecInterval);
+        };
+      })
+      .catch((error) => {
+        console.log("Error", error);
+      });
   }, [updateSettings]);
-  return <Text style={[styles.timeText, { color: textColor }]}>{time}</Text>;
+  return (
+    <>
+      <Text style={[styles.timeText, { color: timeTextColor }]}>{time}</Text>
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <Text style={{ color: timeTextColor }}>
+          {settings.settings?.iniTime}
+        </Text>
+        <Text style={{ color: timeTextColor }}>
+          {settings.settings?.endTime}
+        </Text>
+      </View>
+    </>
+  );
 }
 
 const styles = StyleSheet.create({

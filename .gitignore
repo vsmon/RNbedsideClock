@@ -39,3 +39,4 @@ yarn-error.*
 /src/api/tokens.js
 /src/api/tokens.tsx
 .env
+*.apk

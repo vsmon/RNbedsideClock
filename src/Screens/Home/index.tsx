@@ -62,11 +62,6 @@ export default function Home() {
       color: { dayColor: "", nightColor: "" },
     },
   });
-  const [updateData, setUpdateData] = useState<number>(0);
-  const [updateSettings, setUpdateSettings] = useState<boolean>(false);
-
-  const [idIntervalOne, setIdIntervalOne] = useState<NodeJS.Timeout>();
-  const [idIntervalFive, setIdIntervalFive] = useState<NodeJS.Timeout>();
 
   const [loaded, error] = useFonts({
     "Digital-7": require("../../../assets/fonts/digital-7.ttf"),
@@ -162,71 +157,41 @@ export default function Home() {
     }
   }
 
-  async function requestWriteSettingsPermissoin() {
-    try {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.WRITE_SETTINGS
-        /* {
-          title: "Cool Photo App Camera Permission",
-          message:
-            "Cool Photo App needs access to your camera " +
-            "so you can take awesome pictures.",
-          buttonNeutral: "Ask Me Later",
-          buttonNegative: "Cancel",
-          buttonPositive: "OK",
-        } */
-      );
-      console.log(granted);
-    } catch (error) {
-      console.log("Error request Permission", error);
-    }
-  }
-
-  async function handleSave(values) {
-    await storeData("settings", values);
-  }
-
-  function onCloseSettingsModal({
-    iniTime,
-    endTime,
-    color,
-  }: {
-    iniTime: string;
-    endTime: string;
-    color: { dayColor: string; nightColor: string };
-  }) {
-    const values = {
-      settings: {
-        iniTime,
-        endTime,
-        color,
-      },
-    };
-    handleSave(values);
-    setSettings(values);
-
+  function onCloseSettingsModal() {
     setIsVisibleSettings(!isVisibleSettings);
   }
 
-  async function handleSettings() {
+  async function loadSettings() {
     const settings = await getStoredData("settings");
     if (settings.settings) {
       setSettings(settings);
+      return settings;
     }
   }
 
-  useEffect(() => {
-    handleSettings();
+  function loadData() {
     geTemperature();
     getRaspberryTemperature();
     handleBitcoinPrice();
     handleDollarPrice();
-  }, [updateData]);
+  }
 
   useEffect(() => {
-    handleSettings();
-    setUpdateSettings(true);
+    loadSettings().then((settings) => {
+      setTextColor(settings?.settings?.color?.dayColor!);
+    });
   }, [isVisibleSettings]);
+
+  useEffect(() => {
+    loadSettings();
+    loadData();
+    const fiveSecInvervalID = setInterval(() => {
+      loadData();
+      console.log("LOOP EXECUTED..............");
+    }, 300000);
+
+    return () => clearInterval(fiveSecInvervalID);
+  }, []);
 
   useEffect(() => {
     if (loaded || error) {
@@ -319,12 +284,13 @@ export default function Home() {
             {externalDescription}
           </Text>
         </View>
-        <Pressable onPress={() => setIsVisibleSettings(true)}>
-          {/* <Text style={[styles.timeText, { color: textColor }]}>{time}</Text> */}
+        <Pressable onPress={onCloseSettingsModal}>
           <Time
-            onChangeTextColor={(textColor) => setTextColor(textColor)}
-            onUpdateData={(updateData) => setUpdateData(updateData)}
-            updateSettings={() => updateSettings}
+            textColor={textColor}
+            updateSettings={isVisibleSettings}
+            changeColor={(color) => {
+              setTextColor(color);
+            }}
           />
         </Pressable>
       </View>
@@ -374,13 +340,13 @@ export default function Home() {
             color={netInfo.isConnected ? "#00ac17" : "red"}
           />
         </View>
-        <Button
+        {/* <Button
           title="Test"
           onPress={async () => {
             const dataStored = await getStoredData("settings");
             console.log("BUTTON============", dataStored);
           }}
-        />
+        /> */}
       </View>
     </View>
   );

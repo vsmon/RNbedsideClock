@@ -39,90 +39,101 @@ interface ChildComponentProps {
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-export default function ColorPickerModal({
-  onColorChange,
-}: ChildComponentProps) {
-  const [showModal, setShowModal] = useState(false);
+
+export default function ColorPickerModal() {
+  const [showModal, setShowModalColorPicker] = useState(false);
   const [buttonID, setButtonID] = useState("");
-  const [dayColor, setDayColor] = useState("day");
-  const [nightColor, setNightColor] = useState("night");
+  const [dayColorState, setDayColorState] = useState<string>("red");
+  const [nightColorState, setNightColorState] = useState<string>("blue");
 
-  const initialColor = colorKit.randomRgbColor().hex();
-
+  const initialColor =
+    buttonID === "day"
+      ? dayColorState
+      : nightColorState; /* colorKit.randomRgbColor().hex(); */
+  /* console.log(buttonID === "day" ? dayColorState : nightColorState); */
   const selectedColor = useSharedValue(initialColor);
-
-  const selectedDayColor = useSharedValue(initialColor);
-  const selectedNightColor = useSharedValue(initialColor);
 
   const backgroundColorStyle = useAnimatedStyle(() => ({
     backgroundColor: selectedColor.value,
   }));
 
-  const onColorSelect = (color: returnedResults) => {
-    "worklet";
+  function onColorSelect(color: returnedResults) {
     selectedColor.value = color.hex;
     if (buttonID === "day") {
-      selectedDayColor.value = color.hex;
+      setDayColorState(color.hex);
     } else if (buttonID === "night") {
-      selectedNightColor.value = color.hex;
+      setNightColorState(color.hex);
     }
-  };
-
-  function handleChangeColor() {
-    setDayColor(selectedDayColor.value);
-    setNightColor(selectedNightColor.value);
-    onColorChange({
-      dayColor: selectedDayColor.value,
-      nightColor: selectedNightColor.value,
-    });
   }
 
-  async function handleSettings() {
+  async function saveColors() {
     const settings = await getStoredData("settings");
     if (settings.settings) {
-      setDayColor(settings.settings.color?.dayColor!);
-      setNightColor(settings.settings.color?.nightColor!);
+      const updatedSettings: StoredData = {
+        settings: {
+          ...settings.settings,
+          color: { dayColor: dayColorState, nightColor: nightColorState },
+        },
+      };
+      await storeData("settings", updatedSettings);
     }
+  }
+
+  async function loadColors() {
+    const settings = await getStoredData("settings");
+    if (settings.settings?.color) {
+      setDayColorState(settings.settings?.color?.dayColor);
+      setNightColorState(settings.settings?.color?.nightColor);
+    }
+  }
+
+  function handleButtonDay() {
+    selectedColor.value = dayColorState;
+    setButtonID("day");
+    setShowModalColorPicker(true);
+  }
+
+  function handleButtonNight() {
+    selectedColor.value = nightColorState;
+    setButtonID("night");
+    setShowModalColorPicker(true);
+  }
+
+  function handleCloseColorPicker() {
+    saveColors();
+    setShowModalColorPicker(false);
   }
 
   useEffect(() => {
-    handleSettings();
+    loadColors();
   }, []);
 
   return (
     <>
       <AnimatedPressable
-        style={[styles.openButton, { backgroundColor: dayColor }]}
-        onPress={() => {
-          setButtonID("day");
-          setShowModal(true);
-        }}
+        style={[styles.openButton, { backgroundColor: dayColorState }]}
+        onPress={handleButtonDay}
       >
         <Text
-          style={{ color: "#707070", fontWeight: "bold", textAlign: "center" }}
+          style={{ color: "#ffffff", fontWeight: "bold", textAlign: "center" }}
         >
           Day Color
         </Text>
       </AnimatedPressable>
       <AnimatedPressable
-        style={[styles.openButton, { backgroundColor: nightColor }]}
-        onPress={() => {
-          setButtonID("night");
-          setShowModal(true);
-        }}
+        style={[styles.openButton, { backgroundColor: nightColorState }]}
+        onPress={handleButtonNight}
       >
         <Text
-          style={{ color: "#707070", fontWeight: "bold", textAlign: "center" }}
+          style={{ color: "#ffffff", fontWeight: "bold", textAlign: "center" }}
         >
           Night Color
         </Text>
       </AnimatedPressable>
-      {/* <Animated.View
-        style={[{ height: 100, width: 100 }, backgroundColorStyle]}
-      ></Animated.View> */}
+
       <Modal
         onRequestClose={() => {
-          setShowModal(false);
+          setShowModalColorPicker(false);
         }}
         visible={showModal}
         animationType="slide"
@@ -132,7 +143,7 @@ export default function ColorPickerModal({
             <View style={styles.pickerContainer}>
               <ColorPicker
                 value={selectedColor.value}
-                sliderThickness={25}
+                sliderThickness={10}
                 thumbSize={20}
                 thumbShape="doubleTriangle"
                 onChange={onColorSelect}
@@ -170,10 +181,7 @@ export default function ColorPickerModal({
 
           <Pressable
             style={styles.closeButton}
-            onPress={() => {
-              handleChangeColor();
-              setShowModal(false);
-            }}
+            onPress={handleCloseColorPicker}
           >
             <Text style={{ color: "#707070", fontWeight: "bold" }}>Close</Text>
           </Pressable>
@@ -233,7 +241,7 @@ const styles = StyleSheet.create({
   },
   previewTxtContainer: {
     paddingTop: 20,
-    marginTop: 20,
+    marginTop: 15,
     borderTopWidth: 1,
     borderColor: "#bebdbe",
   },
