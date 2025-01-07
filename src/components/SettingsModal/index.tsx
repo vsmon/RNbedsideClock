@@ -46,6 +46,13 @@ export default function SettingsModal({
   const [iniTime, setIniTime] = useState<string>("00:00:00");
   const [endTime, setEndTime] = useState<string>("10:00:00");
   const [shouldSave, setShouldSave] = useState<boolean>(false);
+  const [settings, setSettings] = useState<StoredData>({
+    settings: {
+      iniTime: "10:00:00",
+      endTime: "10:00:00",
+      color: { dayColor: "#08fdf1", nightColor: "#ff0000" },
+    },
+  });
   const [color, setColor] = useState<Color>({
     dayColor: "#08fdf1",
     nightColor: "#FF0000",
@@ -81,18 +88,20 @@ export default function SettingsModal({
   }, [iniTime, endTime]);
 
   async function saveTime() {
-    const settings = await getStoredData("settings");
-    if (settings.settings) {
+    const storedSettings = await getStoredData("settings");
+    if (storedSettings.settings) {
       const updatedSettings: StoredData = {
         settings: {
-          ...settings.settings,
+          ...storedSettings.settings,
           iniTime: iniTime,
           endTime: endTime,
         },
       };
       await storeData("settings", updatedSettings);
-      setShouldSave(false);
+    } else {
+      await storeData("settings", settings);
     }
+    setShouldSave(false);
   }
 
   async function handleGetSettings() {

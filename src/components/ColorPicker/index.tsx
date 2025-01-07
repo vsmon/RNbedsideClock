@@ -45,6 +45,13 @@ export default function ColorPickerModal() {
   const [buttonID, setButtonID] = useState("");
   const [dayColorState, setDayColorState] = useState<string>("red");
   const [nightColorState, setNightColorState] = useState<string>("blue");
+  const [settings, setSettings] = useState<StoredData>({
+    settings: {
+      iniTime: "10:00:00",
+      endTime: "10:00:00",
+      color: { dayColor: "#08fdf1", nightColor: "#ff0000" },
+    },
+  });
 
   const initialColor =
     buttonID === "day"
@@ -67,15 +74,18 @@ export default function ColorPickerModal() {
   }
 
   async function saveColors() {
-    const settings = await getStoredData("settings");
-    if (settings.settings) {
+    const storedSettings = await getStoredData("settings");
+
+    if (storedSettings.settings) {
       const updatedSettings: StoredData = {
         settings: {
-          ...settings.settings,
+          ...storedSettings.settings,
           color: { dayColor: dayColorState, nightColor: nightColorState },
         },
       };
       await storeData("settings", updatedSettings);
+    } else {
+      await storeData("settings", settings);
     }
   }
 

@@ -27,7 +27,7 @@ import ExternalTempIcon from "../../components/ExternalTempIcon";
 import getBitcoinPrice from "../../api/bitcoinPrice";
 import getDollarPrice from "../../api/dollarPrice";
 import SettingsModal from "../../components/SettingsModal";
-import { getStoredData, storeData } from "../../database";
+import { deleteAllData, getStoredData, storeData } from "../../database";
 import { StoredData } from "../../Types";
 import Time from "../../components/Time";
 
@@ -36,11 +36,9 @@ const TOKEN_RASPBERRY = process.env.TOKEN_RASPBERRY;
 SplashScreen.preventAutoHideAsync();
 
 export default function Home() {
-  const [time, setTime] = useState<string>("");
   const [internalTemperature, setInternalTemperature] = useState<string>("0");
   const [externalTemperature, setExternalTemperature] = useState<string>("0");
-  const [tunoffDisplay, setTurnoffDisplay] = useState<boolean>(false);
-  const [rainyProb, setRainyProb] = useState<string>("0");
+  const [rainProb, setRainyProb] = useState<string>("0");
   const [rainyProbNextHour, setRainyProbNextHour] = useState<string>("0");
   const [nextHour, setNextHour] = useState<string>("0");
   const [internalHumidity, setInternalHumidy] = useState<string>("0");
@@ -50,16 +48,18 @@ export default function Home() {
     id: 800,
     icon: "01d",
   });
-  const [externalDescription, setExternalDescription] = useState<string>("");
+  const [externalWindSpeed, setExternalWindSpeed] = useState<string>("0");
+  const [externalDescription, setExternalDescription] =
+    useState<string>("none");
   const [btcPrice, setBtcPrice] = useState<string>("0");
   const [dollarPrice, setDollarPrice] = useState<string>("0");
-  const [textColor, setTextColor] = useState<string>("#08fdf1");
+  const [textColor, setTextColor] = useState<string>("#FFF");
   const [isVisibleSettings, setIsVisibleSettings] = useState<boolean>(false);
   const [settings, setSettings] = useState<StoredData>({
     settings: {
       iniTime: "10:00:00",
       endTime: "10:00:00",
-      color: { dayColor: "", nightColor: "" },
+      color: { dayColor: "#08fdf1", nightColor: "#ff0000" },
     },
   });
 
@@ -97,12 +97,14 @@ export default function Home() {
         external_id_weather,
         external_description_weather,
         external_icon_weather,
+        external_wind_speed,
       } = json;
 
       const formattedInternalTemperature: string = temperature.toFixed(1);
       const formattedExternalTemperature: string =
         external_temperature.toFixed(1);
       const formattedInternalHumidity: string = humidity.toFixed(0);
+      const formattedWindSpeed: string = external_wind_speed.toFixed(0);
 
       setInternalTemperature(formattedInternalTemperature);
       setExternalTemperature(formattedExternalTemperature);
@@ -113,6 +115,7 @@ export default function Home() {
       setExternalHumidy(external_humidity);
       setIdIcon({ id: external_id_weather, icon: external_icon_weather });
       setExternalDescription(external_description_weather);
+      setExternalWindSpeed(formattedWindSpeed);
 
       //handleForecastData();
     } catch (error) {
@@ -230,22 +233,61 @@ export default function Home() {
           </View>
         </View>
 
-        <View style={styles.rainyProbContainer}>
+        <View style={styles.rainProbContainer}>
           <Ionicons name="umbrella-outline" size={45} color={textColor} />
-          <Text style={[styles.rainyProbText, { color: textColor }]}>
-            {rainyProb}%
+          <Text style={[styles.rainProbText, { color: textColor }]}>
+            {rainProb}%
           </Text>
         </View>
 
-        <View style={styles.rainyProbContainer}>
+        <View style={styles.rainProbContainer}>
           <Text
-            style={[styles.rainyProbText, { fontSize: 35, color: textColor }]}
+            style={[styles.rainProbText, { fontSize: 35, color: textColor }]}
           >
             {nextHour}h
           </Text>
-          <Text style={[styles.rainyProbText, { color: textColor }]}>
+          <Text style={[styles.rainProbText, { color: textColor }]}>
             {rainyProbNextHour}%
           </Text>
+        </View>
+        <View style={styles.windContainer}>
+          <MaterialCommunityIcons
+            name="weather-windy"
+            size={45}
+            color={textColor}
+          />
+          <View
+            style={{
+              flexDirection: "row",
+            }}
+          >
+            <View>
+              <Text
+                style={[
+                  styles.windText,
+                  {
+                    color: textColor,
+                    fontSize: 40,
+                  },
+                ]}
+              >
+                {externalWindSpeed}
+              </Text>
+            </View>
+
+            <Text
+              style={[
+                styles.windText,
+                {
+                  color: textColor,
+                  transform: [{ rotate: "90deg" }],
+                  alignSelf: "center",
+                },
+              ]}
+            >
+              km/h
+            </Text>
+          </View>
         </View>
 
         <View style={styles.externalDataContainer}>
@@ -370,9 +412,15 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     alignItems: "center",
   },
-  rainyProbContainer: {
+  rainProbContainer: {
     justifyContent: "flex-end",
     alignItems: "center",
+    marginLeft: 5,
+    marginRight: 5,
+  },
+  windContainer: {
+    alignItems: "center",
+    //backgroundColor: "red",
   },
   temperatureContainer: {
     alignItems: "center",
@@ -380,10 +428,10 @@ const styles = StyleSheet.create({
   humidityContainer: {
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: 10,
-    marginRight: 10,
-    paddingLeft: 10,
-    paddingRight: 10,
+    marginLeft: 5,
+    marginRight: 5,
+    paddingLeft: 5,
+    paddingRight: 5,
     borderRightWidth: 1,
     borderRightColor: "#FFF9",
     borderLeftWidth: 1,
@@ -411,8 +459,12 @@ const styles = StyleSheet.create({
     fontSize: 40,
     color: "#08fdf1",
   },
-  rainyProbText: {
+  rainProbText: {
     fontSize: 40,
+    color: "#08fdf1",
+  },
+  windText: {
+    fontSize: 15,
     color: "#08fdf1",
   },
   raspberryTempText: {

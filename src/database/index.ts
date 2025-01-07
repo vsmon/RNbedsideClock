@@ -41,4 +41,15 @@ async function getStoredData(key: string): Promise<StoredData> {
   }
 }
 
-export { storeData, getStoredData, mergeData };
+async function deleteAllData(key: string): Promise<boolean> {
+  try {
+    await AsyncStorage.removeItem(key);
+
+    return true;
+  } catch (e) {
+    // saving error
+    console.log("Error when delete data", e);
+    return false;
+  }
+}
+export { storeData, getStoredData, mergeData, deleteAllData };
