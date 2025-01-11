@@ -38,6 +38,8 @@ SplashScreen.preventAutoHideAsync();
 export default function Home() {
   const [internalTemperature, setInternalTemperature] = useState<string>("0");
   const [externalTemperature, setExternalTemperature] = useState<string>("0");
+  const [externalTempMax, setExternalTempMax] = useState<string>("0");
+  const [externalTempMin, setExternalTempMin] = useState<string>("0");
   const [rainProb, setRainyProb] = useState<string>("0");
   const [rainyProbNextHour, setRainyProbNextHour] = useState<string>("0");
   const [nextHour, setNextHour] = useState<string>("0");
@@ -98,6 +100,8 @@ export default function Home() {
         external_description_weather,
         external_icon_weather,
         external_wind_speed,
+        external_temperature_min,
+        external_temperature_max,
       } = json;
 
       const formattedInternalTemperature: string = temperature.toFixed(1);
@@ -105,6 +109,10 @@ export default function Home() {
         external_temperature.toFixed(1);
       const formattedInternalHumidity: string = humidity.toFixed(0);
       const formattedWindSpeed: string = external_wind_speed.toFixed(0);
+      const formattedExternalTempMax: string =
+        external_temperature_max.toFixed(0);
+      const formattedExternalTempMin: string =
+        external_temperature_min.toFixed(0);
 
       setInternalTemperature(formattedInternalTemperature);
       setExternalTemperature(formattedExternalTemperature);
@@ -116,6 +124,8 @@ export default function Home() {
       setIdIcon({ id: external_id_weather, icon: external_icon_weather });
       setExternalDescription(external_description_weather);
       setExternalWindSpeed(formattedWindSpeed);
+      setExternalTempMax(formattedExternalTempMax);
+      setExternalTempMin(formattedExternalTempMin);
 
       //handleForecastData();
     } catch (error) {
@@ -240,7 +250,18 @@ export default function Home() {
           </Text>
         </View>
 
-        <View style={styles.rainProbContainer}>
+        <View
+          style={[
+            styles.rainProbContainer,
+            {
+              borderLeftWidth: 1,
+              borderRightWidth: 1,
+              paddingLeft: 10,
+              paddingRight: 10,
+              borderColor: "#FFF9",
+            },
+          ]}
+        >
           <Text
             style={[styles.rainProbText, { fontSize: 35, color: textColor }]}
           >
@@ -280,8 +301,10 @@ export default function Home() {
                 styles.windText,
                 {
                   color: textColor,
-                  transform: [{ rotate: "90deg" }],
+                  fontWeight: "bold",
+                  transform: [{ rotate: "270deg" }],
                   alignSelf: "center",
+                  marginLeft: -10,
                 },
               ]}
             >
@@ -326,15 +349,34 @@ export default function Home() {
             {externalDescription}
           </Text>
         </View>
-        <Pressable onPress={onCloseSettingsModal}>
-          <Time
-            textColor={textColor}
-            updateSettings={isVisibleSettings}
-            changeColor={(color) => {
-              setTextColor(color);
+        <View style={{ flexDirection: "row" }}>
+          <Pressable onPress={onCloseSettingsModal}>
+            <Time
+              textColor={textColor}
+              updateSettings={isVisibleSettings}
+              changeColor={(color) => {
+                setTextColor(color);
+              }}
+            />
+          </Pressable>
+          <View
+            style={{
+              flexDirection: "column",
+              paddingLeft: 30,
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginTop: 5,
+              marginBottom: 30,
             }}
-          />
-        </Pressable>
+          >
+            <Text style={[styles.tempMinMaxtext, { color: textColor }]}>
+              {externalTempMax}°
+            </Text>
+            <Text style={[styles.tempMinMaxtext, { color: textColor }]}>
+              {externalTempMin}°
+            </Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.footerContainer}>
@@ -467,6 +509,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#08fdf1",
   },
+  tempMinMaxtext: {
+    fontSize: 30,
+  },
   raspberryTempText: {
     color: "#08fdf1",
     fontSize: 40,
@@ -478,8 +523,6 @@ const styles = StyleSheet.create({
   timeContainer: {
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "stretch",
-    //paddingBottom: 30,
   },
   dateContainer: {
     flexDirection: "row",
