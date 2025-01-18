@@ -44,12 +44,13 @@ export default function Time({
     iniTime: string,
     endTime: string,
     dayColor: string,
-    nightColor: string
+    nightColor: string,
+    brightness: number
   ) {
     setTime(new Date().toLocaleTimeString());
 
     if (new Date().toLocaleTimeString() === iniTime) {
-      setBrightness(0);
+      setBrightness(brightness);
       setTimeTextColor(nightColor);
       changeColor(nightColor);
     }
@@ -81,7 +82,8 @@ export default function Time({
             settings?.settings.iniTime!,
             settings?.settings.endTime!,
             settings?.settings.color?.dayColor!,
-            settings?.settings.color?.nightColor!
+            settings?.settings.color?.nightColor!,
+            settings?.settings.brightness!
           );
         }, 1000);
 

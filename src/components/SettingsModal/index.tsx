@@ -26,10 +26,12 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import ColorPicker from "../../components/ColorPicker";
+import Slider from "@react-native-community/slider";
 
 import { getStoredData, storeData } from "../../database";
 import { Color, StoredData } from "../../Types";
 import convertStringToTime from "../../Utils/convertStringToTime";
+import { opacity } from "react-native-reanimated/lib/typescript/Colors";
 
 interface SettingsModalProps {
   visible: boolean;
@@ -51,6 +53,7 @@ export default function SettingsModal({
       iniTime: "10:00:00",
       endTime: "10:00:00",
       color: { dayColor: "#08fdf1", nightColor: "#ff0000" },
+      brightness: 0,
     },
   });
   const [color, setColor] = useState<Color>({
@@ -58,6 +61,10 @@ export default function SettingsModal({
     nightColor: "#FF0000",
   });
   const [textInputID, setTextInputID] = useState<string>("");
+  const [initialBrightness, setInitialBrightness] = useState<number>(0);
+  const [brightness, setBrightness] = useState<number>(initialBrightness);
+  const [isVisibleBrightnessModal, setIsVisibleBrightnessModal] =
+    useState<boolean>(false);
 
   function onChangeTimePicker(
     event: DateTimePickerEvent,
@@ -83,11 +90,11 @@ export default function SettingsModal({
 
   useEffect(() => {
     if (shouldSave) {
-      saveTime();
+      saveData();
     }
-  }, [iniTime, endTime]);
+  }, [iniTime, endTime, brightness]);
 
-  async function saveTime() {
+  async function saveData() {
     const storedSettings = await getStoredData("settings");
     if (storedSettings.settings) {
       const updatedSettings: StoredData = {
@@ -95,6 +102,7 @@ export default function SettingsModal({
           ...storedSettings.settings,
           iniTime: iniTime,
           endTime: endTime,
+          brightness: brightness,
         },
       };
       await storeData("settings", updatedSettings);
@@ -111,10 +119,13 @@ export default function SettingsModal({
         iniTime,
         endTime,
         color = { dayColor: "", nightColor: "" },
+        brightness,
       } = data.settings;
       setIniTime(iniTime);
       setEndTime(endTime);
       setColor(color);
+      setBrightness(brightness!);
+      setInitialBrightness(brightness!);
     }
   }
 
@@ -159,7 +170,6 @@ export default function SettingsModal({
         <Text style={{ color: "#FFF", fontSize: 30, marginBottom: 5 }}>
           Settings
         </Text>
-        {/* <Text style={{ color: "white" }}>{teste}</Text> */}
         <Pressable onPress={handleIniTime}>
           <TextInput
             style={styles.textInput}
@@ -167,8 +177,6 @@ export default function SettingsModal({
             editable={false}
           />
         </Pressable>
-
-        {/* <Text style={{ color: "white" }}>{endTime}</Text> */}
         <Pressable onPress={handleEndTime}>
           <TextInput
             style={styles.textInput}
@@ -176,6 +184,63 @@ export default function SettingsModal({
             editable={false}
           />
         </Pressable>
+        <Pressable
+          style={styles.brightnessButtonOpen}
+          onPress={() => setIsVisibleBrightnessModal(true)}
+        >
+          <Text style={styles.brightnessButtonOpenText}>Brightness</Text>
+        </Pressable>
+        <Modal visible={isVisibleBrightnessModal} transparent={true}>
+          <View
+            style={[
+              styles.modalContainer,
+              {
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "#5252520",
+              },
+            ]}
+          >
+            <View style={styles.modalBrightnessView}>
+              <Text
+                style={{
+                  color: "white",
+                  fontSize: 20,
+                }}
+              >
+                {Math.round(initialBrightness * 100)}%
+              </Text>
+              <Slider
+                style={{
+                  width: 300,
+                  height: 60,
+                  /* backgroundColor: `rgba(247, 6, 6, ${brightness})`, */
+                  borderRadius: 10,
+                  marginBottom: 30,
+                }}
+                minimumValue={0}
+                maximumValue={1}
+                minimumTrackTintColor="#FFFFFF"
+                maximumTrackTintColor="#f8f7f7"
+                value={brightness}
+                onSlidingComplete={(value) => {
+                  setBrightness(value);
+                  setShouldSave(true);
+                }}
+                onValueChange={(value) => setInitialBrightness(value)}
+              />
+              <Pressable
+                style={styles.brightnessButtonClose}
+                onPress={() => setIsVisibleBrightnessModal(false)}
+              >
+                <Text style={{ color: "#707070", fontWeight: "bold" }}>
+                  Close
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
         <ColorPicker />
       </View>
     </Modal>
@@ -194,9 +259,55 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    //width: 500,
     borderRadius: 35,
-    //height: 500,
     backgroundColor: "#302f2f",
+  },
+  modalBrightnessView: {
+    width: 400,
+    //height: "100%",
+    padding: 40,
+    backgroundColor: "#5c5b5b",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  brightnessButtonOpen: {
+    height: 40,
+    width: 300,
+    borderRadius: 20,
+    paddingHorizontal: 40,
+    paddingVertical: 10,
+    backgroundColor: "#504545",
+    marginBottom: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  brightnessButtonClose: {
+    //position: "absolute",
+    bottom: 10,
+    borderRadius: 20,
+    paddingHorizontal: 40,
+    paddingVertical: 10,
+    alignSelf: "center",
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  brightnessButtonOpenText: {
+    color: "#ffffff",
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });

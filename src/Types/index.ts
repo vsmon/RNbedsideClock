@@ -15,6 +15,7 @@ export interface Settings {
   iniTime: string;
   endTime: string;
   color?: Color;
+  brightness?: number;
   error?: Error;
 }
 

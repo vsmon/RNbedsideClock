@@ -256,8 +256,8 @@ export default function Home() {
             {
               borderLeftWidth: 1,
               borderRightWidth: 1,
-              paddingLeft: 10,
-              paddingRight: 10,
+              paddingLeft: 5,
+              paddingRight: 5,
               borderColor: "#FFF9",
             },
           ]}
@@ -282,19 +282,17 @@ export default function Home() {
               flexDirection: "row",
             }}
           >
-            <View>
-              <Text
-                style={[
-                  styles.windText,
-                  {
-                    color: textColor,
-                    fontSize: 40,
-                  },
-                ]}
-              >
-                {externalWindSpeed}
-              </Text>
-            </View>
+            <Text
+              style={[
+                styles.windText,
+                {
+                  color: textColor,
+                  fontSize: 40,
+                },
+              ]}
+            >
+              {externalWindSpeed}
+            </Text>
 
             <Text
               style={[
@@ -304,7 +302,7 @@ export default function Home() {
                   fontWeight: "bold",
                   transform: [{ rotate: "270deg" }],
                   alignSelf: "center",
-                  marginLeft: -10,
+                  marginLeft: -5,
                 },
               ]}
             >
@@ -359,16 +357,7 @@ export default function Home() {
               }}
             />
           </Pressable>
-          <View
-            style={{
-              flexDirection: "column",
-              paddingLeft: 30,
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: 5,
-              marginBottom: 30,
-            }}
-          >
+          <View style={styles.minMaxContainer}>
             <Text style={[styles.tempMinMaxtext, { color: textColor }]}>
               {externalTempMax}°
             </Text>
@@ -523,6 +512,14 @@ const styles = StyleSheet.create({
   timeContainer: {
     alignItems: "center",
     justifyContent: "center",
+  },
+  minMaxContainer: {
+    flexDirection: "column",
+    paddingLeft: 30,
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 5,
+    marginBottom: 30,
   },
   dateContainer: {
     flexDirection: "row",
