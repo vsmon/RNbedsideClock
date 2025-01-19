@@ -216,20 +216,6 @@ export default function Home() {
     return null;
   }
 
-  function VerticalSeparator() {
-    return (
-      <View
-        style={{
-          width: 1,
-          height: "100%",
-          backgroundColor: "gray",
-          marginRight: 5,
-          marginLeft: 5,
-        }}
-      />
-    );
-  }
-
   return (
     <View style={styles.container}>
       <SettingsModal
@@ -237,33 +223,45 @@ export default function Home() {
         onClose={onCloseSettingsModal}
       />
 
-      <View style={styles.forecastContainer}>
-        <View style={styles.temperatureContainer}>
-          <MaterialCommunityIcons
-            name="home-thermometer-outline"
-            size={45}
-            color={textColor}
-          />
-          <Text style={[styles.temperatureText, { color: textColor }]}>
-            {internalTemperature}°
-          </Text>
+      <View style={styles.temperaturesContainer}>
+        <View style={styles.internalDataContainer}>
+          <View style={styles.temperatureContainer}>
+            <MaterialCommunityIcons
+              name="home-thermometer-outline"
+              size={45}
+              color={textColor}
+            />
+            <Text style={[styles.temperatureText, { color: textColor }]}>
+              {internalTemperature}°
+            </Text>
+          </View>
+          <View style={styles.humidityContainer}>
+            <HumidityInside size={45} color={textColor} />
+            <Text style={[styles.temperatureText, { color: textColor }]}>
+              {internalHumidity}%
+            </Text>
+          </View>
         </View>
-        <VerticalSeparator />
-        <View style={styles.humidityContainer}>
-          <HumidityInside size={45} color={textColor} />
-          <Text style={[styles.temperatureText, { color: textColor }]}>
-            {internalHumidity}%
-          </Text>
-        </View>
-        <VerticalSeparator />
+
         <View style={styles.rainProbContainer}>
           <Ionicons name="umbrella-outline" size={45} color={textColor} />
           <Text style={[styles.rainProbText, { color: textColor }]}>
             {rainProb}%
           </Text>
         </View>
-        <VerticalSeparator />
-        <View style={styles.rainProbContainer}>
+
+        <View
+          style={[
+            styles.rainProbContainer,
+            {
+              borderLeftWidth: 1,
+              borderRightWidth: 1,
+              paddingLeft: 5,
+              paddingRight: 5,
+              borderColor: "#FFF9",
+            },
+          ]}
+        >
           <Text
             style={[styles.rainProbText, { fontSize: 35, color: textColor }]}
           >
@@ -273,7 +271,6 @@ export default function Home() {
             {rainyProbNextHour}%
           </Text>
         </View>
-        <VerticalSeparator />
         <View style={styles.windContainer}>
           <MaterialCommunityIcons
             name="weather-windy"
@@ -313,24 +310,26 @@ export default function Home() {
             </Text>
           </View>
         </View>
-        <VerticalSeparator />
-        <View style={styles.humidityContainer}>
-          <Humidity size={45} color={textColor} />
-          <Text style={[styles.temperatureText, { color: textColor }]}>
-            {externalHumidity}%
-          </Text>
-        </View>
-        <VerticalSeparator />
-        <View style={styles.temperatureContainer}>
-          <ExternalTempIcon idIcon={idIcon} size={45} color={textColor} />
 
-          <Text style={[styles.temperatureText, { color: textColor }]}>
-            {externalTemperature}°
-          </Text>
+        <View style={styles.externalDataContainer}>
+          <View style={styles.humidityContainer}>
+            <Humidity size={45} color={textColor} />
+            <Text style={[styles.temperatureText, { color: textColor }]}>
+              {externalHumidity}%
+            </Text>
+          </View>
+
+          <View style={styles.temperatureContainer}>
+            <ExternalTempIcon idIcon={idIcon} size={45} color={textColor} />
+
+            <Text style={[styles.temperatureText, { color: textColor }]}>
+              {externalTemperature}°
+            </Text>
+          </View>
         </View>
       </View>
 
-      <View style={styles.dateTimeContainer}>
+      <View style={styles.timeContainer}>
         <View style={styles.dateContainer}>
           <Text style={[styles.dateText, { color: textColor }]}>
             {new Intl.DateTimeFormat(undefined, {
@@ -348,48 +347,29 @@ export default function Home() {
             {externalDescription}
           </Text>
         </View>
-        <View
-          style={{
-            flexDirection: "row",
-            width: "100%",
-          }}
-        >
-          <View style={styles.timeContainer}>
-            <Pressable onPress={onCloseSettingsModal}>
-              <Time
-                textColor={textColor}
-                updateSettings={isVisibleSettings}
-                changeColor={(color) => {
-                  setTextColor(color);
-                }}
-              />
-            </Pressable>
-          </View>
-          <View>
-            <View style={styles.minMaxTempContainer}>
-              <Text style={[styles.tempMinMaxtext, { color: textColor }]}>
-                {externalTempMax}°
-              </Text>
-              <Text style={[styles.tempMinMaxtext, { color: textColor }]}>
-                {externalTempMin}°
-              </Text>
-            </View>
+        <View style={{ flexDirection: "row" }}>
+          <Pressable onPress={onCloseSettingsModal}>
+            <Time
+              textColor={textColor}
+              updateSettings={isVisibleSettings}
+              changeColor={(color) => {
+                setTextColor(color);
+              }}
+            />
+          </Pressable>
+          <View style={styles.minMaxContainer}>
+            <Text style={[styles.tempMinMaxtext, { color: textColor }]}>
+              {externalTempMax}°
+            </Text>
+            <Text style={[styles.tempMinMaxtext, { color: textColor }]}>
+              {externalTempMin}°
+            </Text>
           </View>
         </View>
       </View>
 
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-around",
-        }}
-      >
-        <Text style={{ color: textColor }}>{settings.settings?.iniTime}</Text>
-        <Text style={{ color: textColor }}>{settings.settings?.endTime}</Text>
-      </View>
-
       <View style={styles.footerContainer}>
-        <View style={styles.footerDirection}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Fontisto name="raspberry-pi" size={40} color="#E30B5C" />
           <FontAwesome6 name="temperature-half" size={40} color={textColor} />
           <Text style={[styles.raspberryTempText, { color: textColor }]}>
@@ -397,7 +377,7 @@ export default function Home() {
           </Text>
         </View>
 
-        <View style={styles.footerDirection}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <FontAwesome name="bitcoin" size={40} color={"#F7931A"} />
           <Text
             style={[
@@ -410,7 +390,7 @@ export default function Home() {
             ${btcPrice}
           </Text>
         </View>
-        <View style={styles.footerDirection}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <FontAwesome name="dollar" size={40} color={"#00be19"} />
           <Text
             style={[
@@ -447,6 +427,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#000000",
+    alignItems: "center",
     justifyContent: "center",
     padding: 5,
   },
@@ -464,8 +445,8 @@ const styles = StyleSheet.create({
   rainProbContainer: {
     justifyContent: "flex-end",
     alignItems: "center",
-    /*  marginLeft: 5,
-    marginRight: 5, */
+    marginLeft: 5,
+    marginRight: 5,
   },
   windContainer: {
     alignItems: "center",
@@ -477,11 +458,21 @@ const styles = StyleSheet.create({
   humidityContainer: {
     justifyContent: "center",
     alignItems: "center",
+    marginLeft: 5,
+    marginRight: 5,
+    paddingLeft: 5,
+    paddingRight: 5,
+    borderRightWidth: 1,
+    borderRightColor: "#FFF9",
+    borderLeftWidth: 1,
+    borderLeftColor: "#FFF9",
   },
-  forecastContainer: {
-    width: "100%",
+  temperaturesContainer: {
+    alignSelf: "stretch",
     flexDirection: "row",
     justifyContent: "space-between",
+    padding: 5,
+    backgroundColor: "red",
   },
   timeText: {
     fontSize: 150,
@@ -518,17 +509,17 @@ const styles = StyleSheet.create({
     fontFamily: "Roboto",
     fontWeight: "bold",
   },
-  dateTimeContainer: {
+  timeContainer: {
     alignItems: "center",
     justifyContent: "center",
   },
-  timeContainer: {
-    flex: 1,
+  minMaxContainer: {
+    flexDirection: "column",
+    paddingLeft: 30,
     alignItems: "center",
-  },
-  minMaxTempContainer: {
-    flex: 1,
     justifyContent: "space-between",
+    marginTop: 5,
+    marginBottom: 30,
   },
   dateContainer: {
     flexDirection: "row",
@@ -542,7 +533,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  footerDirection: { flexDirection: "row", alignItems: "center" },
   btcPriceText: {
     fontSize: 40,
     marginLeft: 5,

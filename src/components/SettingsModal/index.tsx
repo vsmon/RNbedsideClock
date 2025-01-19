@@ -170,25 +170,37 @@ export default function SettingsModal({
         <Text style={{ color: "#FFF", fontSize: 30, marginBottom: 5 }}>
           Settings
         </Text>
-        <Pressable onPress={handleIniTime}>
-          <TextInput
-            style={styles.textInput}
-            value={iniTime}
-            editable={false}
-          />
-        </Pressable>
-        <Pressable onPress={handleEndTime}>
-          <TextInput
-            style={styles.textInput}
-            value={endTime}
-            editable={false}
-          />
-        </Pressable>
+        <View>
+          <Text
+            style={{
+              color: "#FFF",
+            }}
+          >
+            Night Time
+          </Text>
+          <Pressable onPress={handleIniTime}>
+            <TextInput
+              style={styles.textInput}
+              value={iniTime}
+              editable={false}
+            />
+          </Pressable>
+        </View>
+        <View>
+          <Text style={{ color: "#FFF" }}>Day Time</Text>
+          <Pressable onPress={handleEndTime}>
+            <TextInput
+              style={styles.textInput}
+              value={endTime}
+              editable={false}
+            />
+          </Pressable>
+        </View>
         <Pressable
           style={styles.brightnessButtonOpen}
           onPress={() => setIsVisibleBrightnessModal(true)}
         >
-          <Text style={styles.brightnessButtonOpenText}>Brightness</Text>
+          <Text style={styles.brightnessButtonOpenText}>Night Brightness</Text>
         </Pressable>
         <Modal visible={isVisibleBrightnessModal} transparent={true}>
           <View
@@ -198,7 +210,7 @@ export default function SettingsModal({
                 flex: 1,
                 justifyContent: "center",
                 alignItems: "center",
-                backgroundColor: "#5252520",
+                //backgroundColor: "#5252520",
               },
             ]}
           >
@@ -252,8 +264,10 @@ const styles = StyleSheet.create({
     height: 40,
     width: 300,
     backgroundColor: "#FFF",
+    padding: 10,
     borderRadius: 5,
     marginBottom: 10,
+    fontSize: 15,
   },
   modalContainer: {
     flex: 1,
@@ -277,7 +291,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 40,
     paddingVertical: 10,
-    backgroundColor: "#504545",
+    backgroundColor: "#666363",
     marginBottom: 5,
     shadowColor: "#000",
     shadowOffset: {

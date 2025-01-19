@@ -96,17 +96,11 @@ export default function Time({
       });
   }, [updateSettings]);
   return (
-    <>
-      <Text style={[styles.timeText, { color: timeTextColor }]}>{time}</Text>
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={{ color: timeTextColor }}>
-          {settings.settings?.iniTime}
-        </Text>
-        <Text style={{ color: timeTextColor }}>
-          {settings.settings?.endTime}
-        </Text>
+    <View>
+      <View>
+        <Text style={[styles.timeText, { color: timeTextColor }]}>{time}</Text>
       </View>
-    </>
+    </View>
   );
 }
 
@@ -115,6 +109,5 @@ const styles = StyleSheet.create({
     fontSize: 150,
     fontFamily: "Digital-7-mono",
     color: "#08fdf1",
-    marginTop: 5,
   },
 });
