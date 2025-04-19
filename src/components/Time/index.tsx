@@ -75,9 +75,27 @@ export default function Time({
   }, [textColor]);
 
   useEffect(() => {
+    let timeOut: NodeJS.Timeout;
     loadSettings()
-      .then((settings) => {
-        const oneSecInterval = setInterval(() => {
+      .then(
+        (settings) => {
+          const oneSecInterval = () => {
+            Time(
+              settings?.settings.iniTime!,
+              settings?.settings.endTime!,
+              settings?.settings.color?.dayColor!,
+              settings?.settings.color?.nightColor!,
+              settings?.settings.brightness!
+            );
+            timeOut = setTimeout(oneSecInterval, 1000);
+          };
+          oneSecInterval();
+        }
+        /* return () => {
+        clearTimeout(timeOut);
+      }; */
+
+        /* setTimeout(() => {
           Time(
             settings?.settings.iniTime!,
             settings?.settings.endTime!,
@@ -85,15 +103,15 @@ export default function Time({
             settings?.settings.color?.nightColor!,
             settings?.settings.brightness!
           );
-        }, 1000);
-
-        return () => {
-          clearInterval(oneSecInterval);
-        };
-      })
+        }, 1000); */
+      )
       .catch((error) => {
         console.log("Error", error);
       });
+    return () => {
+      clearTimeout(timeOut);
+      console.log("Passei return==============>");
+    };
   }, [updateSettings]);
   return (
     <View>
