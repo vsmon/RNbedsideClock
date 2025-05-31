@@ -5,6 +5,8 @@ import * as Brightness from "expo-brightness";
 import { StoredData } from "../../Types";
 import { getStoredData } from "../../database";
 
+//Branch published
+
 interface ChildComponentProps {
   textColor: string;
   updateSettings: boolean;
