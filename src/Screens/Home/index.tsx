@@ -30,6 +30,8 @@ import SettingsModal from "../../components/SettingsModal";
 import { deleteAllData, getStoredData, storeData } from "../../database";
 import { StoredData } from "../../Types";
 import Time from "../../components/Time";
+import getForecast from "../../api/openweathermap";
+import data from "../../../mock";
 
 const TOKEN_RASPBERRY = process.env.TOKEN_RASPBERRY;
 
@@ -64,6 +66,33 @@ export default function Home() {
       color: { dayColor: "#08fdf1", nightColor: "#ff0000" },
     },
   });
+  const [externalForecastDay1, setExternalForecastDay1] = useState<{
+    external_temperature_day1: string;
+    external_id_icon_day1: number;
+    external_icon_weather_day1: string;
+  }>({
+    external_temperature_day1: "0",
+    external_id_icon_day1: 0,
+    external_icon_weather_day1: "0",
+  });
+  const [externalForecastDay2, setExternalForecastDay2] = useState<{
+    external_temperature_day2: string;
+    external_id_icon_day2: number;
+    external_icon_weather_day2: string;
+  }>({
+    external_temperature_day2: "0",
+    external_id_icon_day2: 0,
+    external_icon_weather_day2: "0",
+  });
+  const [externalForecastDay3, setExternalForecastDay3] = useState<{
+    external_temperature_day3: string;
+    external_id_icon_day3: number;
+    external_icon_weather_day3: string;
+  }>({
+    external_temperature_day3: "0",
+    external_id_icon_day3: 0,
+    external_icon_weather_day3: "0",
+  });
 
   const [loaded, error] = useFonts({
     "Digital-7": require("../../../assets/fonts/digital-7.ttf"),
@@ -84,50 +113,85 @@ export default function Home() {
       console.log("Error to get Temperature Raspberry!", error);
     }
   }
-  async function geTemperature() {
-    try {
-      const data = await fetch("https://arduino.rodrigofm.com.br/data");
-      const json = await data.json();
-      const {
-        temperature,
-        external_temperature,
-        external_rain_probability,
-        external_rain_probability_next_hour,
-        next_hour,
-        humidity,
-        external_humidity,
-        external_id_weather,
-        external_description_weather,
-        external_icon_weather,
-        external_wind_speed,
-        external_temperature_min,
-        external_temperature_max,
-      } = json;
 
-      const formattedInternalTemperature: string = temperature.toFixed(1);
+  async function getForecast() {
+    try {
+      const forecast = await openweathermap();
+      const {
+        current: {
+          temp: external_temperature,
+          humidity: external_humidity,
+          wind_speed: external_wind_speed,
+          weather: [
+            {
+              id: external_id_weather,
+              description: external_description_weather,
+              icon: external_icon_weather,
+            },
+          ],
+        },
+        daily: [
+          {
+            pop: external_rain_probability,
+            temp: {
+              min: external_temperature_min,
+              max: external_temperature_max,
+            },
+          },
+          {
+            temp: { day: external_temperature_day1 },
+            weather: [
+              { id: external_id_icon_day1, icon: external_icon_weather_day1 },
+            ],
+          },
+          {
+            temp: { day: external_temperature_day2 },
+            weather: [
+              { id: external_id_icon_day2, icon: external_icon_weather_day2 },
+            ],
+          },
+          ,
+          {
+            temp: { day: external_temperature_day3 },
+            weather: [
+              { id: external_id_icon_day3, icon: external_icon_weather_day3 },
+            ],
+          },
+        ],
+      } = forecast;
+
       const formattedExternalTemperature: string =
         external_temperature.toFixed(1);
-      const formattedInternalHumidity: string = humidity.toFixed(0);
       const formattedWindSpeed: string = external_wind_speed.toFixed(0);
       const formattedExternalTempMax: string =
         external_temperature_max.toFixed(0);
       const formattedExternalTempMin: string =
         external_temperature_min.toFixed(0);
 
-      setInternalTemperature(formattedInternalTemperature);
       setExternalTemperature(formattedExternalTemperature);
-      setRainyProb(external_rain_probability);
-      setRainyProbNextHour(external_rain_probability_next_hour);
-      setNextHour(next_hour);
-      setInternalHumidy(formattedInternalHumidity);
-      setExternalHumidy(external_humidity);
+      setRainyProb(external_rain_probability.toFixed(0));
+      setExternalHumidy(external_humidity.toFixed(0));
       setIdIcon({ id: external_id_weather, icon: external_icon_weather });
       setExternalDescription(external_description_weather);
       setExternalWindSpeed(formattedWindSpeed);
       setExternalTempMax(formattedExternalTempMax);
       setExternalTempMin(formattedExternalTempMin);
 
-      //handleForecastData();
+      setExternalForecastDay1({
+        external_temperature_day1: external_temperature_day1.toFixed(0),
+        external_id_icon_day1,
+        external_icon_weather_day1,
+      });
+      setExternalForecastDay2({
+        external_temperature_day2: external_temperature_day2.toFixed(0),
+        external_id_icon_day2,
+        external_icon_weather_day2,
+      });
+      setExternalForecastDay3({
+        external_temperature_day3: external_temperature_day3.toFixed(0),
+        external_id_icon_day3,
+        external_icon_weather_day3,
+      });
     } catch (error) {
       console.log("Error to get Temperature Data!", error);
     }
@@ -183,7 +247,7 @@ export default function Home() {
   }
 
   function loadData() {
-    geTemperature();
+    getForecast();
     getRaspberryTemperature();
     handleBitcoinPrice();
     handleDollarPrice();
@@ -229,6 +293,230 @@ export default function Home() {
       />
     );
   }
+
+  return (
+    <View style={styles.container}>
+      <SettingsModal
+        visible={isVisibleSettings}
+        onClose={onCloseSettingsModal}
+      />
+
+      <View style={styles.forecastContainer}>
+        <View style={styles.temperatureContainer}>
+          <ExternalTempIcon idIcon={idIcon} size={45} color={textColor} />
+
+          <Text style={[styles.temperatureText, { color: textColor }]}>
+            {externalTemperature}°
+          </Text>
+        </View>
+
+        <VerticalSeparator />
+
+        <View style={styles.humidityContainer}>
+          <Humidity size={45} color={textColor} />
+          <Text style={[styles.temperatureText, { color: textColor }]}>
+            {externalHumidity}%
+          </Text>
+        </View>
+
+        <VerticalSeparator />
+
+        <View style={styles.rainProbContainer}>
+          <Ionicons name="umbrella-outline" size={45} color={textColor} />
+          <Text style={[styles.rainProbText, { color: textColor }]}>
+            {rainProb}%
+          </Text>
+        </View>
+
+        <VerticalSeparator />
+
+        <View style={styles.windContainer}>
+          <MaterialCommunityIcons
+            name="weather-windy"
+            size={45}
+            color={textColor}
+          />
+          <View
+            style={{
+              flexDirection: "row",
+            }}
+          >
+            <Text
+              style={[
+                styles.windText,
+                {
+                  color: textColor,
+                  fontSize: 40,
+                },
+              ]}
+            >
+              {externalWindSpeed}
+            </Text>
+
+            <Text
+              style={[
+                styles.windText,
+                {
+                  color: textColor,
+                  fontWeight: "bold",
+                  transform: [{ rotate: "270deg" }],
+                  alignSelf: "center",
+                  marginLeft: -5,
+                },
+              ]}
+            >
+              km/h
+            </Text>
+          </View>
+        </View>
+        <VerticalSeparator />
+
+        <View style={styles.temperatureContainer}>
+          <Text style={{ color: textColor }}>
+            {new Date(
+              new Date().getFullYear(),
+              new Date().getMonth(),
+              new Date().getDate() + 1
+            ).toLocaleDateString(undefined, {
+              weekday: "short",
+            })}
+          </Text>
+          <ExternalTempIcon
+            idIcon={{
+              id: externalForecastDay1.external_id_icon_day1,
+              icon: externalForecastDay1.external_icon_weather_day1,
+            }}
+            size={45}
+            color={textColor}
+          />
+
+          <Text style={[styles.temperatureText, { color: textColor }]}>
+            {externalForecastDay1.external_temperature_day1}°
+          </Text>
+        </View>
+        <VerticalSeparator />
+        <View style={styles.temperatureContainer}>
+          <Text style={{ color: textColor }}>
+            {new Date(
+              new Date().getFullYear(),
+              new Date().getMonth(),
+              new Date().getDate() + 2
+            ).toLocaleDateString(undefined, {
+              weekday: "short",
+            })}
+          </Text>
+          <ExternalTempIcon
+            idIcon={{
+              id: externalForecastDay2.external_id_icon_day2,
+              icon: externalForecastDay2.external_icon_weather_day2,
+            }}
+            size={45}
+            color={textColor}
+          />
+
+          <Text style={[styles.temperatureText, { color: textColor }]}>
+            {externalForecastDay2.external_temperature_day2}°
+          </Text>
+        </View>
+        <VerticalSeparator />
+        <View style={styles.temperatureContainer}>
+          <Text style={{ color: textColor }}>
+            {new Date(
+              new Date().getFullYear(),
+              new Date().getMonth(),
+              new Date().getDate() + 3
+            ).toLocaleDateString(undefined, {
+              weekday: "short",
+            })}
+          </Text>
+          <ExternalTempIcon
+            idIcon={{
+              id: externalForecastDay3.external_id_icon_day3,
+              icon: externalForecastDay3.external_icon_weather_day3,
+            }}
+            size={45}
+            color={textColor}
+          />
+
+          <Text style={[styles.temperatureText, { color: textColor }]}>
+            {externalForecastDay3.external_temperature_day3}°
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.dateTimeContainer}>
+        <View style={styles.dateContainer}>
+          <Text style={[styles.dateText, { color: textColor }]}>
+            {new Intl.DateTimeFormat(undefined, {
+              //dateStyle: "full",
+              day: "2-digit",
+              weekday: "short",
+              month: "short",
+              year: "numeric",
+              //timeStyle: "short",
+              //timeZone: "America/Sao_Paulo",
+            }).format(new Date())}
+          </Text>
+          <Text style={{ color: textColor, fontSize: 25 }}>{" - "}</Text>
+          <Text style={[styles.dateText, { color: textColor }]}>
+            {externalDescription}
+          </Text>
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            width: "100%",
+          }}
+        >
+          <View style={styles.timeContainer}>
+            <Pressable onPress={onCloseSettingsModal}>
+              <Time
+                textColor={textColor}
+                updateSettings={isVisibleSettings}
+                changeColor={(color) => {
+                  setTextColor(color);
+                }}
+              />
+            </Pressable>
+          </View>
+          <View>
+            <View style={styles.minMaxTempContainer}>
+              <Text style={[styles.tempMinMaxtext, { color: textColor }]}>
+                {externalTempMax}°
+              </Text>
+              <Text style={[styles.tempMinMaxtext, { color: textColor }]}>
+                {externalTempMin}°
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-around",
+        }}
+      >
+        <Text style={{ color: textColor }}>
+          Night Color: {settings.settings?.iniTime}
+        </Text>
+        <Text style={{ color: textColor }}>
+          Day Color: {settings.settings?.endTime}
+        </Text>
+      </View>
+
+      <View style={styles.footerContainer}>
+        <View style={{ alignSelf: "flex-end" }}>
+          <MaterialCommunityIcons
+            name={netInfo.isConnected ? "wifi" : "wifi-off"}
+            size={45}
+            color={netInfo.isConnected ? "#00ac17" : "red"}
+          />
+        </View>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -472,6 +760,7 @@ const styles = StyleSheet.create({
     //backgroundColor: "red",
   },
   temperatureContainer: {
+    justifyContent: "center",
     alignItems: "center",
   },
   humidityContainer: {
@@ -482,6 +771,7 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
   },
   timeText: {
     fontSize: 150,
@@ -539,7 +829,7 @@ const styles = StyleSheet.create({
   footerContainer: {
     flexDirection: "row",
     alignSelf: "stretch",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
   },
   footerDirection: { flexDirection: "row", alignItems: "center" },

@@ -126,7 +126,7 @@ export default function Time({
 
 const styles = StyleSheet.create({
   timeText: {
-    fontSize: 150,
+    fontSize: 170,
     fontFamily: "Digital-7-mono",
     color: "#08fdf1",
   },

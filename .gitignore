@@ -40,3 +40,5 @@ yarn-error.*
 /src/api/tokens.tsx
 .env
 *.apk
+
+mock.ts
