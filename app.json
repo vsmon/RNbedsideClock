@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Bedside Clock",
-    "slug": "Bedside Clock",
+    "slug": "RNrelogio",
     "version": "1.0.0",
     "orientation": "landscape",
     "icon": "./assets/icon.png",
