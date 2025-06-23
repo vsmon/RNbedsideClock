@@ -149,13 +149,15 @@ export default function Home() {
       const formattedExternalTempMin: string =
         external_temperature_min.toFixed(0);
 
-      const formattedExternalRainProbability: string = (
-        external_rain_probability * 100
-      ).toFixed(0);
+      const formattedExternalRainProbability: string =
+        external_rain_probability === 1
+          ? String(99)
+          : (external_rain_probability * 100).toFixed(0);
 
-      const formattedExternalRainProbabilityNextHour: string = (
-        external_rain_probability_next_hour * 100
-      ).toFixed(0);
+      const formattedExternalRainProbabilityNextHour: string =
+        external_rain_probability_next_hour === 1
+          ? String(99)
+          : (external_rain_probability_next_hour * 100).toFixed(0);
 
       const formattedNextHour: string = new Date(dt_next_hour * 1000)
         .getHours()
