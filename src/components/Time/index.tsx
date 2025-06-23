@@ -49,12 +49,14 @@ export default function Time({
   ) {
     setTime(new Date().toLocaleTimeString());
 
-    if (new Date().toLocaleTimeString() === iniTime) {
+    if (
+      new Date().toLocaleTimeString() >= iniTime &&
+      new Date().toLocaleTimeString() <= endTime
+    ) {
       setBrightness(brightness);
       setTimeTextColor(nightColor);
       changeColor(nightColor);
-    }
-    if (new Date().toLocaleTimeString() === endTime) {
+    } else {
       setBrightnessAutomatic();
       setTimeTextColor(dayColor);
       changeColor(dayColor);

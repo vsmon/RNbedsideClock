@@ -36,21 +36,22 @@ const TOKEN_RASPBERRY = process.env.TOKEN_RASPBERRY;
 SplashScreen.preventAutoHideAsync();
 
 export default function Home() {
-  const [internalTemperature, setInternalTemperature] = useState<string>("0");
-  const [externalTemperature, setExternalTemperature] = useState<string>("0");
-  const [externalTempMax, setExternalTempMax] = useState<string>("0");
-  const [externalTempMin, setExternalTempMin] = useState<string>("0");
-  const [rainProb, setRainyProb] = useState<string>("0");
-  const [rainyProbNextHour, setRainyProbNextHour] = useState<string>("0");
-  const [nextHour, setNextHour] = useState<string>("0");
-  const [internalHumidity, setInternalHumidy] = useState<string>("0");
-  const [externalHumidity, setExternalHumidy] = useState<string>("0");
-  const [raspberryTemperature, setRaspberryTemperature] = useState<string>("0");
+  const [internalTemperature, setInternalTemperature] = useState<string>("-90");
+  const [externalTemperature, setExternalTemperature] = useState<string>("-90");
+  const [externalTempMax, setExternalTempMax] = useState<string>("-90");
+  const [externalTempMin, setExternalTempMin] = useState<string>("-90");
+  const [rainProb, setRainyProb] = useState<string>("-90");
+  const [rainyProbNextHour, setRainyProbNextHour] = useState<string>("-90");
+  const [nextHour, setNextHour] = useState<string>("-90");
+  const [internalHumidity, setInternalHumidy] = useState<string>("-90");
+  const [externalHumidity, setExternalHumidy] = useState<string>("-90");
+  const [raspberryTemperature, setRaspberryTemperature] =
+    useState<string>("-90");
   const [idIcon, setIdIcon] = useState<{ id: number; icon: string }>({
     id: 800,
     icon: "01d",
   });
-  const [externalWindSpeed, setExternalWindSpeed] = useState<string>("0");
+  const [externalWindSpeed, setExternalWindSpeed] = useState<string>("-90");
   const [externalDescription, setExternalDescription] =
     useState<string>("none");
   const [btcPrice, setBtcPrice] = useState<string>("0");
@@ -64,6 +65,10 @@ export default function Home() {
       color: { dayColor: "#08fdf1", nightColor: "#ff0000" },
     },
   });
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [lastUpdate, setLastUpdate] = useState<string>(
+    new Date().toLocaleTimeString()
+  );
 
   const [loaded, error] = useFonts({
     "Digital-7": require("../../../assets/fonts/digital-7.ttf"),
@@ -80,93 +85,152 @@ export default function Home() {
       const { temp } = json;
       const formattedTemp = temp.toFixed(0);
       setRaspberryTemperature(formattedTemp);
-    } catch (error) {
+      setErrorMessage("");
+    } catch (error: unknown) {
       console.log("Error to get Temperature Raspberry!", error);
+      setErrorMessage(String(error));
     }
   }
-  async function geTemperature() {
+  async function handleExternalForecast() {
     try {
-      const data = await fetch("https://arduino.rodrigofm.com.br/data");
-      const json = await data.json();
+      const forecast = await openweathermap();
       const {
-        temperature,
-        external_temperature,
-        external_rain_probability,
-        external_rain_probability_next_hour,
-        next_hour,
-        humidity,
-        external_humidity,
-        external_id_weather,
-        external_description_weather,
-        external_icon_weather,
-        external_wind_speed,
-        external_temperature_min,
-        external_temperature_max,
-      } = json;
+        current: {
+          temp: external_temperature,
+          humidity: external_humidity,
+          wind_speed: external_wind_speed,
+          weather: [
+            {
+              id: external_id_weather,
+              description: external_description_weather,
+              icon: external_icon_weather,
+            },
+          ],
+        },
+        hourly: [
+          ,
+          { dt: dt_next_hour, pop: external_rain_probability_next_hour },
+        ],
+        daily: [
+          {
+            pop: external_rain_probability,
+            temp: {
+              min: external_temperature_min,
+              max: external_temperature_max,
+            },
+          },
+          {
+            temp: { day: external_temperature_day1 },
+            weather: [
+              { id: external_id_icon_day1, icon: external_icon_weather_day1 },
+            ],
+          },
+          {
+            temp: { day: external_temperature_day2 },
+            weather: [
+              { id: external_id_icon_day2, icon: external_icon_weather_day2 },
+            ],
+          },
+          ,
+          {
+            temp: { day: external_temperature_day3 },
+            weather: [
+              { id: external_id_icon_day3, icon: external_icon_weather_day3 },
+            ],
+          },
+        ],
+      } = forecast;
 
-      const formattedInternalTemperature: string = temperature.toFixed(1);
       const formattedExternalTemperature: string =
         external_temperature.toFixed(1);
-      const formattedInternalHumidity: string = humidity.toFixed(0);
-      const formattedWindSpeed: string = external_wind_speed.toFixed(0);
+      const formattedWindSpeed: string = (external_wind_speed * 3.6).toFixed(0);
       const formattedExternalTempMax: string =
         external_temperature_max.toFixed(0);
       const formattedExternalTempMin: string =
         external_temperature_min.toFixed(0);
 
-      setInternalTemperature(formattedInternalTemperature);
+      const formattedExternalRainProbability: string = (
+        external_rain_probability * 100
+      ).toFixed(0);
+
+      const formattedExternalRainProbabilityNextHour: string = (
+        external_rain_probability_next_hour * 100
+      ).toFixed(0);
+
+      const formattedNextHour: string = new Date(dt_next_hour * 1000)
+        .getHours()
+        .toFixed(0);
+
       setExternalTemperature(formattedExternalTemperature);
-      setRainyProb(external_rain_probability);
-      setRainyProbNextHour(external_rain_probability_next_hour);
-      setNextHour(next_hour);
-      setInternalHumidy(formattedInternalHumidity);
-      setExternalHumidy(external_humidity);
+      setRainyProb(formattedExternalRainProbability);
+      setExternalHumidy(external_humidity.toFixed(0));
       setIdIcon({ id: external_id_weather, icon: external_icon_weather });
       setExternalDescription(external_description_weather);
       setExternalWindSpeed(formattedWindSpeed);
       setExternalTempMax(formattedExternalTempMax);
       setExternalTempMin(formattedExternalTempMin);
 
-      //handleForecastData();
-    } catch (error) {
-      console.log("Error to get Temperature Data!", error);
+      setRainyProbNextHour(formattedExternalRainProbabilityNextHour);
+      setNextHour(formattedNextHour);
+
+      setErrorMessage("");
+    } catch (error: unknown) {
+      console.log("Error to get External Forecast Data!", error);
+      setErrorMessage(String(error));
     }
   }
+  async function handleInternalForecast() {
+    try {
+      const data = await fetch("https://arduino.rodrigofm.com.br/data");
+      const json = await data.json();
+      const { temperature, humidity, external_temperature_max } = json;
 
-  async function handleForecastData() {
-    const forecast = await openweathermap();
-    const {
-      current: {
-        temp,
-        weather: [{ id, main, description, icon }],
-      },
-    } = forecast;
-    const formattedTemp = temp.toFixed(1);
-    setExternalTemperature(formattedTemp);
-    setIdIcon(id);
+      const formattedInternalTemperature: string = temperature.toFixed(1);
+
+      const formattedInternalHumidity: string = humidity.toFixed(0);
+
+      setInternalTemperature(formattedInternalTemperature);
+
+      setInternalHumidy(formattedInternalHumidity);
+
+      setErrorMessage("");
+    } catch (error: unknown) {
+      console.log("Error to get Internal Forecast Data!", error);
+      setErrorMessage(String(error));
+    }
   }
 
   async function handleBitcoinPrice() {
-    const bitcoinPrice: number = await getBitcoinPrice();
-    if (bitcoinPrice) {
-      const formattedBitcoinPrice = Number(bitcoinPrice).toLocaleString(
-        undefined,
-        {
-          maximumFractionDigits: 0,
-        }
-      );
-      setBtcPrice(formattedBitcoinPrice);
+    try {
+      const bitcoinPrice: number = await getBitcoinPrice();
+      if (bitcoinPrice) {
+        const formattedBitcoinPrice = Number(bitcoinPrice).toLocaleString(
+          undefined,
+          {
+            maximumFractionDigits: 0,
+          }
+        );
+        setBtcPrice(formattedBitcoinPrice);
+      }
+      setErrorMessage("");
+    } catch (error: unknown) {
+      setErrorMessage(String(error));
     }
   }
   async function handleDollarPrice() {
-    const dollarPrice: number = await getDollarPrice();
-    if (dollarPrice) {
-      const formattedDollarPrice = (
-        Math.floor(dollarPrice * 100) / 100
-      ).toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-      });
-      setDollarPrice(formattedDollarPrice);
+    try {
+      const dollarPrice: number = await getDollarPrice();
+      if (dollarPrice) {
+        const formattedDollarPrice = (
+          Math.floor(dollarPrice * 100) / 100
+        ).toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+        });
+        setDollarPrice(formattedDollarPrice);
+      }
+      setErrorMessage("");
+    } catch (error: unknown) {
+      setErrorMessage(String(error));
     }
   }
 
@@ -175,18 +239,25 @@ export default function Home() {
   }
 
   async function loadSettings() {
-    const settings = await getStoredData("settings");
-    if (settings.settings) {
-      setSettings(settings);
-      return settings;
+    try {
+      const settings = await getStoredData("settings");
+      if (settings.settings) {
+        setSettings(settings);
+        setErrorMessage("");
+        return settings;
+      }
+    } catch (error: unknown) {
+      setErrorMessage(String(error));
     }
   }
 
   function loadData() {
-    geTemperature();
+    handleInternalForecast();
+    handleExternalForecast();
     getRaspberryTemperature();
     handleBitcoinPrice();
     handleDollarPrice();
+    setLastUpdate(new Date().toLocaleTimeString());
   }
 
   useEffect(() => {
@@ -384,8 +455,20 @@ export default function Home() {
           justifyContent: "space-around",
         }}
       >
-        <Text style={{ color: textColor }}>{settings.settings?.iniTime}</Text>
-        <Text style={{ color: textColor }}>{settings.settings?.endTime}</Text>
+        <Text style={{ color: textColor }}>
+          Night: {settings.settings?.iniTime}
+        </Text>
+
+        <Text style={{ color: textColor }}>
+          {errorMessage}
+          {errorMessage !== ""
+            ? `Error: ${errorMessage}`
+            : `Last Update: ${lastUpdate}`}
+        </Text>
+
+        <Text style={{ color: textColor }}>
+          Day: {settings.settings?.endTime}
+        </Text>
       </View>
 
       <View style={styles.footerContainer}>
