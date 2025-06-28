@@ -58,13 +58,7 @@ export default function Home() {
   const [dollarPrice, setDollarPrice] = useState<string>("0");
   const [textColor, setTextColor] = useState<string>("#FFF");
   const [isVisibleSettings, setIsVisibleSettings] = useState<boolean>(false);
-  const [settings, setSettings] = useState<StoredData>({
-    settings: {
-      iniTime: "10:00:00",
-      endTime: "10:00:00",
-      color: { dayColor: "#08fdf1", nightColor: "#ff0000" },
-    },
-  });
+  const [settings, setSettings] = useState<StoredData | undefined>(undefined);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [lastUpdate, setLastUpdate] = useState<string>(
     new Date().toLocaleTimeString()
@@ -458,7 +452,7 @@ export default function Home() {
         }}
       >
         <Text style={{ color: textColor }}>
-          Night: {settings.settings?.iniTime}
+          Night: {settings?.settings!.iniTime}
         </Text>
 
         <Text style={{ color: textColor }}>
@@ -469,7 +463,7 @@ export default function Home() {
         </Text>
 
         <Text style={{ color: textColor }}>
-          Day: {settings.settings?.endTime}
+          Day: {settings?.settings?.endTime}
         </Text>
       </View>
 

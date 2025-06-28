@@ -14,8 +14,8 @@ export interface Color {
 export interface Settings {
   iniTime: string;
   endTime: string;
-  color?: Color;
-  brightness?: number;
+  color: Color;
+  brightness: number;
   error?: Error;
 }
 

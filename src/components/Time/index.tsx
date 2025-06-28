@@ -19,13 +19,7 @@ export default function Time({
   const [time, setTime] = useState<string>("");
   const [timeTextColor, setTimeTextColor] = useState<string>(textColor);
 
-  const [settings, setSettings] = useState<StoredData>({
-    settings: {
-      iniTime: "10:00:00",
-      endTime: "10:00:00",
-      color: { dayColor: "", nightColor: "" },
-    },
-  });
+  const [settings, setSettings] = useState<StoredData | undefined>(undefined);
 
   async function setBrightness(value: number) {
     const { status } = await Brightness.requestPermissionsAsync();
@@ -77,44 +71,22 @@ export default function Time({
   }, [textColor]);
 
   useEffect(() => {
-    let timeOut: NodeJS.Timeout;
-    loadSettings()
-      .then(
-        (settings) => {
-          const oneSecInterval = () => {
-            Time(
-              settings?.settings.iniTime!,
-              settings?.settings.endTime!,
-              settings?.settings.color?.dayColor!,
-              settings?.settings.color?.nightColor!,
-              settings?.settings.brightness!
-            );
-            timeOut = setTimeout(oneSecInterval, 1000);
-          };
-          oneSecInterval();
-        }
-        /* return () => {
-        clearTimeout(timeOut);
-      }; */
+    let oneSecInterval: NodeJS.Timeout;
+    loadSettings().then((settings) => {
+      oneSecInterval = setInterval(() => {
+        const {
+          iniTime,
+          endTime,
+          color: { dayColor, nightColor },
+          brightness,
+        } = settings?.settings!;
+        Time(iniTime, endTime, dayColor, nightColor, brightness);
+      }, 1000);
+    });
 
-        /* setTimeout(() => {
-          Time(
-            settings?.settings.iniTime!,
-            settings?.settings.endTime!,
-            settings?.settings.color?.dayColor!,
-            settings?.settings.color?.nightColor!,
-            settings?.settings.brightness!
-          );
-        }, 1000); */
-      )
-      .catch((error) => {
-        console.log("Error", error);
-      });
-    return () => {
-      clearTimeout(timeOut);
-      console.log("Passei return==============>");
-    };
+    return () => clearInterval(oneSecInterval);
   }, [updateSettings]);
+
   return (
     <View>
       <View>
