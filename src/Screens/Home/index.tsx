@@ -190,7 +190,7 @@ export default function Home() {
   }
   async function handleInternalForecast() {
     try {
-      const data = await fetch("https://arduino1.rodrigofm.com.br/data");
+      const data = await fetch("https://arduino.rodrigofm.com.br/data");
       const json = await data.json();
       const { temperature, humidity, external_temperature_max } = json;
 
