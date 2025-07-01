@@ -63,6 +63,15 @@ export default function Time({
       setSettings(settings);
 
       return settings;
+    } else {
+      return {
+        settings: {
+          iniTime: "10:00:00",
+          endTime: "10:00:00",
+          color: { dayColor: "#08fdf1", nightColor: "#ff0000" },
+          brightness: 0,
+        },
+      };
     }
   }
 

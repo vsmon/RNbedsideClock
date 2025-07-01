@@ -14,6 +14,7 @@ import {
   Fontisto,
   FontAwesome6,
   FontAwesome,
+  MaterialIcons,
 } from "@expo/vector-icons";
 
 import * as SplashScreen from "expo-splash-screen";
@@ -27,9 +28,16 @@ import ExternalTempIcon from "../../components/ExternalTempIcon";
 import getBitcoinPrice from "../../api/bitcoinPrice";
 import getDollarPrice from "../../api/dollarPrice";
 import SettingsModal from "../../components/SettingsModal";
-import { deleteAllData, getStoredData, storeData } from "../../database";
+import {
+  deleteAllData,
+  getStoredData,
+  mergeData,
+  storeData,
+} from "../../database";
 import { StoredData } from "../../Types";
 import Time from "../../components/Time";
+import ErrorListModal from "../../components/ErrorListModal";
+import handleErrors from "../../Utils/handleErrors";
 
 const TOKEN_RASPBERRY = process.env.TOKEN_RASPBERRY;
 
@@ -58,6 +66,7 @@ export default function Home() {
   const [dollarPrice, setDollarPrice] = useState<string>("0");
   const [textColor, setTextColor] = useState<string>("#FFF");
   const [isVisibleSettings, setIsVisibleSettings] = useState<boolean>(false);
+  const [isVisibleErrorList, setIsVisibleErrorList] = useState<boolean>(false);
   const [settings, setSettings] = useState<StoredData | undefined>(undefined);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [lastUpdate, setLastUpdate] = useState<string>(
@@ -81,7 +90,9 @@ export default function Home() {
       setRaspberryTemperature(formattedTemp);
       setErrorMessage("");
     } catch (error: unknown) {
-      console.log("Error to get Temperature Raspberry!", error);
+      const errorMessage = `Error to get Temperature Raspberry! Error: ${error}`;
+      handleErrors(errorMessage);
+      console.log(errorMessage);
       setErrorMessage(String(error));
     }
   }
@@ -171,13 +182,15 @@ export default function Home() {
 
       setErrorMessage("");
     } catch (error: unknown) {
-      console.log("Error to get External Forecast Data!", error);
+      const errorMessage = `Error to get External Forecast Data! Error: ${error}`;
+      console.log(errorMessage);
+      console.log(errorMessage);
       setErrorMessage(String(error));
     }
   }
   async function handleInternalForecast() {
     try {
-      const data = await fetch("https://arduino.rodrigofm.com.br/data");
+      const data = await fetch("https://arduino1.rodrigofm.com.br/data");
       const json = await data.json();
       const { temperature, humidity, external_temperature_max } = json;
 
@@ -191,7 +204,10 @@ export default function Home() {
 
       setErrorMessage("");
     } catch (error: unknown) {
-      console.log("Error to get Internal Forecast Data!", error);
+      const errorMessage = `Error to get Internal Forecast Data!" Error: ${error}`;
+      console.log(errorMessage);
+
+      handleErrors(errorMessage);
       setErrorMessage(String(error));
     }
   }
@@ -210,6 +226,8 @@ export default function Home() {
       }
       setErrorMessage("");
     } catch (error: unknown) {
+      const errorMessage = `Error to get bitcoin price!" Error: ${error}`;
+      console.log(errorMessage);
       setErrorMessage(String(error));
     }
   }
@@ -226,12 +244,17 @@ export default function Home() {
       }
       setErrorMessage("");
     } catch (error: unknown) {
+      const errorMessage = `Error to get dollar price!" Error: ${error}`;
+      console.log(errorMessage);
       setErrorMessage(String(error));
     }
   }
 
   function onCloseSettingsModal() {
     setIsVisibleSettings(!isVisibleSettings);
+  }
+  function onCloseErrorListModal() {
+    setIsVisibleErrorList(!isVisibleErrorList);
   }
 
   async function loadSettings() {
@@ -243,6 +266,9 @@ export default function Home() {
         return settings;
       }
     } catch (error: unknown) {
+      const errorMessage = `Error to load settings from database!" Error: ${error}`;
+      console.log(errorMessage);
+      handleErrors(errorMessage);
       setErrorMessage(String(error));
     }
   }
@@ -263,6 +289,7 @@ export default function Home() {
   }, [isVisibleSettings]);
 
   useEffect(() => {
+    //deleteAllData("errorList");
     loadSettings();
     loadData();
     const fiveSecInvervalID = setInterval(() => {
@@ -302,6 +329,11 @@ export default function Home() {
       <SettingsModal
         visible={isVisibleSettings}
         onClose={onCloseSettingsModal}
+      />
+
+      <ErrorListModal
+        visible={isVisibleErrorList}
+        onClose={onCloseErrorListModal}
       />
 
       <View style={styles.forecastContainer}>
@@ -454,13 +486,17 @@ export default function Home() {
         <Text style={{ color: textColor }}>
           Night: {settings?.settings!.iniTime}
         </Text>
+        <Pressable onPress={onCloseErrorListModal}>
+          <Text
+            style={{ color: textColor }}
+          >{`Last Update: ${lastUpdate}`}</Text>
+        </Pressable>
 
-        <Text style={{ color: textColor }}>
-          {errorMessage}
-          {errorMessage !== ""
-            ? `Error: ${errorMessage}`
-            : `Last Update: ${lastUpdate}`}
-        </Text>
+        {/* <View style={{ justifyContent: "flex-start" }}>
+          <Pressable onPress={onCloseErrorListModal}>
+            <MaterialIcons name="error" size={12} color={"red"} />
+          </Pressable>
+        </View> */}
 
         <Text style={{ color: textColor }}>
           Day: {settings?.settings?.endTime}

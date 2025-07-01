@@ -23,8 +23,14 @@ export interface Error {
   message: string;
 }
 
+export type ErrorList = {
+  date: Date;
+  message: String;
+};
+
 export type StoredData =
-  | { settings: Settings; error?: never }
-  | { settings?: never; error?: Error };
+  | { settings: Settings; error?: never; errorList?: never }
+  | { settings?: never; error?: Error; errorList?: never }
+  | { errorList: ErrorList[]; error?: never; settings?: never };
 
 //  export type StoredData = Settings;
