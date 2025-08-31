@@ -9,7 +9,7 @@ import {
   FontAwesome,
 } from "@expo/vector-icons";
 
-import { getStoredData, storeData } from "../../database";
+import { deleteAllData, getStoredData, storeData } from "../../database";
 import { StoredData, ErrorList } from "../../Types";
 
 interface ErrorListModalProps {
@@ -29,20 +29,29 @@ export default function ErrorListModal({
   async function getErrorList() {
     const data = await getStoredData("errorList");
     const errorList = data.errorList ? data.errorList : [];
-    setErrorList(errorList);
+    setErrorList(errorList.reverse());
+  }
+  function handleDeleteErrorList() {
+    deleteAllData("errorList");
   }
   useEffect(() => {
     getErrorList();
   }, [visible]);
+
+  useEffect(() => {
+    getErrorList();
+  }, [errorList]);
   return (
     <Modal visible={visible} onRequestClose={onClose} transparent={true}>
       <View style={styles.modalContainer}>
-        <MaterialCommunityIcons
-          name="close"
-          size={30}
-          color={"white"}
-          onPress={onCloseSettingsModal}
-        />
+        <View style={{ flexDirection: "row" }}>
+          <MaterialCommunityIcons
+            name="close"
+            size={30}
+            color={"white"}
+            onPress={onCloseSettingsModal}
+          />
+        </View>
         <Text style={{ color: "white" }}>Error List</Text>
 
         <FlatList
@@ -65,6 +74,12 @@ export default function ErrorListModal({
             </View>
           )}
           keyExtractor={(item) => String(item.date)}
+        />
+        <MaterialCommunityIcons
+          name="delete-sweep"
+          size={30}
+          color={"white"}
+          onPress={handleDeleteErrorList}
         />
       </View>
     </Modal>
