@@ -34,7 +34,7 @@ import {
   mergeData,
   storeData,
 } from "../../database";
-import { StoredData } from "../../Types";
+import { StoredData, ErrorSource } from "../../Types";
 import Time from "../../components/Time";
 import ErrorListModal from "../../components/ErrorListModal";
 import handleErrors from "../../Utils/handleErrors";
@@ -68,9 +68,14 @@ export default function Home() {
   const [isVisibleSettings, setIsVisibleSettings] = useState<boolean>(false);
   const [isVisibleErrorList, setIsVisibleErrorList] = useState<boolean>(false);
   const [settings, setSettings] = useState<StoredData | undefined>(undefined);
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [sourceErrorMessage, setSourceErrorMessage] = useState<
+    {
+      source: ErrorSource | "";
+      message?: string;
+    }[]
+  >([]);
   const [lastUpdate, setLastUpdate] = useState<string>(
-    new Date().toLocaleTimeString()
+    new Date().toLocaleTimeString(),
   );
 
   const [loaded, error] = useFonts({
@@ -79,6 +84,30 @@ export default function Home() {
   });
 
   const netInfo = useNetInfo();
+  const textColorNotUpdated = "#ffffff7d";
+
+  const isErrored = (src: ErrorSource) =>
+    sourceErrorMessage.some((err) => err.source === src);
+
+  function ErrorIndicator({ src }: { src: ErrorSource }) {
+    if (!isErrored(src)) return null;
+    return (
+      <MaterialIcons
+        name="error"
+        size={16}
+        color="red"
+        style={styles.errorIcon}
+      />
+    );
+  }
+
+  function handleSourceError(source: ErrorSource, message: string) {
+    setSourceErrorMessage((prevErrors) => {
+      // Evita duplicar o mesmo erro caso a função seja chamada repetidamente
+      const filtered = prevErrors.filter((err) => err.source !== source);
+      return [...filtered, { source, message }];
+    });
+  }
 
   async function getRaspberryTemperature() {
     const URL: string = `https://rodrigofm.com.br/temperature?token=${TOKEN_RASPBERRY}`;
@@ -88,12 +117,16 @@ export default function Home() {
       const { temp } = json;
       const formattedTemp = temp.toFixed(0);
       setRaspberryTemperature(formattedTemp);
-      setErrorMessage("");
+      setSourceErrorMessage((prevErrors) =>
+        prevErrors.filter(
+          (src) => src.source !== ErrorSource.RaspberryTemperature,
+        ),
+      );
     } catch (error: unknown) {
       const errorMessage = `Error to get Temperature Raspberry! Error: ${error}`;
       handleErrors(errorMessage);
       console.log(errorMessage);
-      setErrorMessage(String(error));
+      handleSourceError(ErrorSource.RaspberryTemperature, errorMessage);
     }
   }
   async function handleExternalForecast() {
@@ -179,13 +212,14 @@ export default function Home() {
 
       setRainyProbNextHour(formattedExternalRainProbabilityNextHour);
       setNextHour(formattedNextHour);
-
-      setErrorMessage("");
+      setSourceErrorMessage((prevErrors) =>
+        prevErrors.filter((src) => src.source !== ErrorSource.ExternalForecast),
+      );
     } catch (error: unknown) {
       const errorMessage = `Error to get External Forecast Data! Error: ${error}`;
       console.log(errorMessage);
       console.log(errorMessage);
-      setErrorMessage(String(error));
+      handleSourceError(ErrorSource.ExternalForecast, errorMessage);
     }
   }
   async function handleInternalForecast() {
@@ -201,14 +235,15 @@ export default function Home() {
       setInternalTemperature(formattedInternalTemperature);
 
       setInternalHumidy(formattedInternalHumidity);
-
-      setErrorMessage("");
+      setSourceErrorMessage((prevErrors) =>
+        prevErrors.filter((src) => src.source !== ErrorSource.InternalForecast),
+      );
     } catch (error: unknown) {
       const errorMessage = `Error to get Internal Forecast Data!" Error: ${error}`;
       console.log(errorMessage);
 
       handleErrors(errorMessage);
-      setErrorMessage(String(error));
+      handleSourceError(ErrorSource.InternalForecast, errorMessage);
     }
   }
 
@@ -220,15 +255,19 @@ export default function Home() {
           undefined,
           {
             maximumFractionDigits: 0,
-          }
+          },
         );
         setBtcPrice(formattedBitcoinPrice);
+        setSourceErrorMessage((prevErrors) =>
+          prevErrors.filter((src) => src.source !== ErrorSource.BitcoinPrice),
+        );
+      } else {
+        throw new Error(`Error to get bitcoin price!" Error: undefined value`);
       }
-      setErrorMessage("");
     } catch (error: unknown) {
       const errorMessage = `Error to get bitcoin price!" Error: ${error}`;
       console.log(errorMessage);
-      setErrorMessage(String(error));
+      handleSourceError(ErrorSource.BitcoinPrice, errorMessage);
     }
   }
   async function handleDollarPrice() {
@@ -241,12 +280,16 @@ export default function Home() {
           minimumFractionDigits: 2,
         });
         setDollarPrice(formattedDollarPrice);
+        setSourceErrorMessage((prevErrors) =>
+          prevErrors.filter((src) => src.source !== ErrorSource.DollarPrice),
+        );
+      } else {
+        throw new Error(`Error to get dollar price!" Error: undefined value`);
       }
-      setErrorMessage("");
     } catch (error: unknown) {
       const errorMessage = `Error to get dollar price!" Error: ${error}`;
       console.log(errorMessage);
-      setErrorMessage(String(error));
+      handleSourceError(ErrorSource.DollarPrice, errorMessage);
     }
   }
 
@@ -262,14 +305,13 @@ export default function Home() {
       const settings = await getStoredData("settings");
       if (settings.settings) {
         setSettings(settings);
-        setErrorMessage("");
+
         return settings;
       }
     } catch (error: unknown) {
       const errorMessage = `Error to load settings from database!" Error: ${error}`;
       console.log(errorMessage);
       handleErrors(errorMessage);
-      setErrorMessage(String(error));
     }
   }
 
@@ -343,34 +385,90 @@ export default function Home() {
             size={45}
             color={textColor}
           />
-          <Text style={[styles.temperatureText, { color: textColor }]}>
-            {internalTemperature}°
-          </Text>
+          <View style={{ position: "relative", alignItems: "center" }}>
+            <Text
+              style={[
+                styles.temperatureText,
+                {
+                  color: isErrored(ErrorSource.InternalForecast)
+                    ? textColorNotUpdated
+                    : textColor,
+                },
+              ]}
+            >
+              {internalTemperature}°
+            </Text>
+            <ErrorIndicator src={ErrorSource.InternalForecast} />
+          </View>
         </View>
         <VerticalSeparator />
         <View style={styles.humidityContainer}>
           <HumidityInside size={45} color={textColor} />
-          <Text style={[styles.temperatureText, { color: textColor }]}>
-            {internalHumidity}%
-          </Text>
+          <View style={{ position: "relative", alignItems: "center" }}>
+            <Text
+              style={[
+                styles.temperatureText,
+                {
+                  color: isErrored(ErrorSource.InternalForecast)
+                    ? textColorNotUpdated
+                    : textColor,
+                },
+              ]}
+            >
+              {internalHumidity}%
+            </Text>
+            <ErrorIndicator src={ErrorSource.InternalForecast} />
+          </View>
         </View>
         <VerticalSeparator />
         <View style={styles.rainProbContainer}>
           <Ionicons name="umbrella-outline" size={45} color={textColor} />
-          <Text style={[styles.rainProbText, { color: textColor }]}>
-            {rainProb}%
-          </Text>
+          <View style={{ position: "relative", alignItems: "center" }}>
+            <Text
+              style={[
+                styles.rainProbText,
+                {
+                  color: isErrored(ErrorSource.ExternalForecast)
+                    ? textColorNotUpdated
+                    : textColor,
+                },
+              ]}
+            >
+              {rainProb}%
+            </Text>
+            <ErrorIndicator src={ErrorSource.ExternalForecast} />
+          </View>
         </View>
         <VerticalSeparator />
         <View style={styles.rainProbContainer}>
-          <Text
-            style={[styles.rainProbText, { fontSize: 35, color: textColor }]}
-          >
-            {nextHour}h
-          </Text>
-          <Text style={[styles.rainProbText, { color: textColor }]}>
-            {rainyProbNextHour}%
-          </Text>
+          <View style={{ position: "relative", alignItems: "center" }}>
+            <Text
+              style={[
+                styles.rainProbText,
+                {
+                  fontSize: 35,
+                  color: isErrored(ErrorSource.ExternalForecast)
+                    ? textColorNotUpdated
+                    : textColor,
+                },
+              ]}
+            >
+              {nextHour}h
+            </Text>
+            <Text
+              style={[
+                styles.rainProbText,
+                {
+                  color: isErrored(ErrorSource.ExternalForecast)
+                    ? textColorNotUpdated
+                    : textColor,
+                },
+              ]}
+            >
+              {rainyProbNextHour}%
+            </Text>
+            <ErrorIndicator src={ErrorSource.ExternalForecast} />
+          </View>
         </View>
         <VerticalSeparator />
         <View style={styles.windContainer}>
@@ -384,48 +482,79 @@ export default function Home() {
               flexDirection: "row",
             }}
           >
-            <Text
-              style={[
-                styles.windText,
-                {
-                  color: textColor,
-                  fontSize: 40,
-                },
-              ]}
+            <View
+              style={{
+                flexDirection: "row",
+              }}
             >
-              {externalWindSpeed}
-            </Text>
-
-            <Text
-              style={[
-                styles.windText,
-                {
-                  color: textColor,
-                  fontWeight: "bold",
-                  transform: [{ rotate: "270deg" }],
-                  alignSelf: "center",
-                  marginLeft: -5,
-                },
-              ]}
-            >
-              km/h
-            </Text>
+              <Text
+                style={[
+                  styles.windText,
+                  {
+                    color: isErrored(ErrorSource.ExternalForecast)
+                      ? textColorNotUpdated
+                      : textColor,
+                    fontSize: 40,
+                  },
+                ]}
+              >
+                {externalWindSpeed}
+              </Text>
+              <Text
+                style={[
+                  styles.windText,
+                  {
+                    color: textColor,
+                    fontWeight: "bold",
+                    transform: [{ rotate: "270deg" }],
+                    alignSelf: "center",
+                    marginLeft: -5,
+                  },
+                ]}
+              >
+                km/h
+              </Text>
+              <ErrorIndicator src={ErrorSource.ExternalForecast} />
+            </View>
           </View>
         </View>
         <VerticalSeparator />
         <View style={styles.humidityContainer}>
           <Humidity size={45} color={textColor} />
-          <Text style={[styles.temperatureText, { color: textColor }]}>
-            {externalHumidity}%
-          </Text>
+          <View style={{ position: "relative", alignItems: "center" }}>
+            <Text
+              style={[
+                styles.temperatureText,
+                {
+                  color: isErrored(ErrorSource.ExternalForecast)
+                    ? textColorNotUpdated
+                    : textColor,
+                },
+              ]}
+            >
+              {externalHumidity}%
+            </Text>
+            <ErrorIndicator src={ErrorSource.ExternalForecast} />
+          </View>
         </View>
         <VerticalSeparator />
         <View style={styles.temperatureContainer}>
           <ExternalTempIcon idIcon={idIcon} size={45} color={textColor} />
-
-          <Text style={[styles.temperatureText, { color: textColor }]}>
-            {externalTemperature}°
-          </Text>
+          <View style={{ position: "relative", alignItems: "center" }}>
+            <Text
+              style={[
+                styles.temperatureText,
+                {
+                  color: isErrored(ErrorSource.ExternalForecast)
+                    ? textColorNotUpdated
+                    : textColor,
+                },
+              ]}
+            >
+              {externalTemperature}°
+            </Text>
+            <ErrorIndicator src={ErrorSource.ExternalForecast} />
+          </View>
         </View>
       </View>
 
@@ -483,7 +612,11 @@ export default function Home() {
           justifyContent: "space-around",
         }}
       >
-        <Text style={{ color: textColor }}>
+        <Text
+          style={{
+            color: textColor,
+          }}
+        >
           Night: {settings?.settings!.iniTime}
         </Text>
         <Pressable onPress={onCloseErrorListModal}>
@@ -498,7 +631,11 @@ export default function Home() {
           </Pressable>
         </View> */}
 
-        <Text style={{ color: textColor }}>
+        <Text
+          style={{
+            color: textColor,
+          }}
+        >
           Day: {settings?.settings?.endTime}
         </Text>
       </View>
@@ -507,9 +644,19 @@ export default function Home() {
         <View style={styles.footerDirection}>
           <Fontisto name="raspberry-pi" size={40} color="#E30B5C" />
           <FontAwesome6 name="temperature-half" size={40} color={textColor} />
-          <Text style={[styles.raspberryTempText, { color: textColor }]}>
+          <Text
+            style={[
+              styles.raspberryTempText,
+              {
+                color: isErrored(ErrorSource.RaspberryTemperature)
+                  ? textColorNotUpdated
+                  : textColor,
+              },
+            ]}
+          >
             {raspberryTemperature}°
           </Text>
+          <ErrorIndicator src={ErrorSource.RaspberryTemperature} />
         </View>
 
         <View style={styles.footerDirection}>
@@ -518,12 +665,15 @@ export default function Home() {
             style={[
               styles.btcPriceText,
               {
-                color: textColor,
+                color: isErrored(ErrorSource.BitcoinPrice)
+                  ? textColorNotUpdated
+                  : textColor,
               },
             ]}
           >
             ${btcPrice}
           </Text>
+          <ErrorIndicator src={ErrorSource.BitcoinPrice} />
         </View>
         <View style={styles.footerDirection}>
           <FontAwesome name="dollar" size={40} color={"#00be19"} />
@@ -531,12 +681,15 @@ export default function Home() {
             style={[
               styles.dollarPriceText,
               {
-                color: textColor,
+                color: isErrored(ErrorSource.DollarPrice)
+                  ? textColorNotUpdated
+                  : textColor,
               },
             ]}
           >
             {dollarPrice}
           </Text>
+          <ErrorIndicator src={ErrorSource.DollarPrice} />
         </View>
 
         <View style={{ alignSelf: "flex-end" }}>
@@ -587,6 +740,7 @@ const styles = StyleSheet.create({
     //backgroundColor: "red",
   },
   temperatureContainer: {
+    justifyContent: "center",
     alignItems: "center",
   },
   humidityContainer: {
@@ -669,5 +823,10 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     fontFamily: "Roboto",
     fontWeight: "bold",
+  },
+  errorIcon: {
+    position: "absolute",
+    top: -10,
+    right: -2,
   },
 });

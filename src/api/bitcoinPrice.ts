@@ -1,4 +1,4 @@
-export default async function getBitcoinPrice(): Promise<number> {
+export default async function getBitcoinPrice() {
   try {
     const URL: string = `https://api.coinbase.com/v2/prices/BTC-USD/buy`;
     const resp = await fetch(URL);
@@ -14,6 +14,6 @@ export default async function getBitcoinPrice(): Promise<number> {
     }
   } catch (error) {
     console.log("ERROR================>", error);
-    return 0;
+    //return 0;
   }
 }

@@ -23,6 +23,15 @@ export interface Error {
   message: string;
 }
 
+export enum ErrorSource {
+  RaspberryTemperature = "RaspberryTemperature",
+  ExternalForecast = "ExternalForecast",
+  InternalForecast = "InternalForecast",
+  BitcoinPrice = "BitcoinPrice",
+  DollarPrice = "DollarPrice",
+  LoadSettings = "loadSettings",
+}
+
 export type ErrorList = {
   date: Date;
   message: String;

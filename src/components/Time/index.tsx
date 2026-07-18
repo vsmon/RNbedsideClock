@@ -30,7 +30,7 @@ export default function Time({
 
   async function setBrightnessAutomatic() {
     Brightness.setSystemBrightnessModeAsync(
-      Brightness.BrightnessMode.AUTOMATIC
+      Brightness.BrightnessMode.AUTOMATIC,
     );
   }
 
@@ -39,7 +39,7 @@ export default function Time({
     endTime: string,
     dayColor: string,
     nightColor: string,
-    brightness: number
+    brightness: number,
   ) {
     setTime(new Date().toLocaleTimeString());
 
@@ -98,7 +98,7 @@ export default function Time({
 
   return (
     <View>
-      <View>
+      <View style={{ justifyContent: "center", alignItems: "center" }}>
         <Text style={[styles.timeText, { color: timeTextColor }]}>{time}</Text>
       </View>
     </View>
