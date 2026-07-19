@@ -4,6 +4,7 @@ import { View, Text, StyleSheet } from "react-native";
 import * as Brightness from "expo-brightness";
 import { StoredData } from "../../Types";
 import { getStoredData } from "../../database";
+import convertStringToTime from "../../Utils/convertStringToTime";
 
 interface ChildComponentProps {
   textColor: string;
@@ -34,7 +35,7 @@ export default function Time({
     );
   }
 
-  async function Time(
+  function Time(
     iniTime: string,
     endTime: string,
     dayColor: string,
@@ -42,11 +43,21 @@ export default function Time({
     brightness: number,
   ) {
     setTime(new Date().toLocaleTimeString());
+    console.log("CURRENT TIME================", new Date());
+    console.log("INI TIME=============", convertStringToTime(iniTime));
+    console.log("END TIME=============", convertStringToTime(endTime));
+
+    console.log(
+      "TEST CONDICAO=============",
+      new Date() >= convertStringToTime(iniTime) &&
+        new Date() <= convertStringToTime(endTime),
+    );
 
     if (
-      new Date().toLocaleTimeString() >= iniTime &&
-      new Date().toLocaleTimeString() <= endTime
+      new Date() >= convertStringToTime(iniTime) &&
+      new Date() <= convertStringToTime(endTime)
     ) {
+      console.log("ENTREI============");
       setBrightness(brightness);
       setTimeTextColor(nightColor);
       changeColor(nightColor);
